@@ -285,7 +285,7 @@ function Index() {
         {result && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Results</CardTitle>
+              <CardTitle className="text-lg"><h2>Results</h2></CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <p className="text-sm text-muted-foreground">
@@ -294,9 +294,9 @@ function Index() {
               </p>
               {result.outcomes.map((o) => (
                 <div key={o.outcome} className="space-y-2">
-                  <h3 className="font-semibold">
+                  <h2 className="font-semibold text-base">
                     If I {o.outcome.toLowerCase()}:
-                  </h3>
+                  </h2>
                   {o.totalScenarios === 0 ? (
                     <p className="text-sm text-muted-foreground">No scenarios.</p>
                   ) : o.exactPayout !== undefined ? (
