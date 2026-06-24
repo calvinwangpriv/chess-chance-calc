@@ -46,7 +46,7 @@ function Index() {
   const extract = useServerFn(extractPairings);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
-  const [prizes, setPrizes] = useState("1800, 900, 500, 300, 200, 150, 100, 75, 50, 25");
+  const [prizes, setPrizes] = useState("");
   const [targetPlayer, setTargetPlayer] = useState("");
   const [pairings, setPairings] = useState<Pairing[]>([]);
   const [result, setResult] = useState<CalcResult | null>(null);
