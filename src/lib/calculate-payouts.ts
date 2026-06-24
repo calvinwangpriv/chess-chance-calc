@@ -217,8 +217,8 @@ export function calculatePayouts(
 
   return {
     totalBoards: pairings.length,
-    criticalBoards: critical.length,
-    trivialBoards: trivial.length,
+    criticalBoards: variable.length,
+    trivialBoards: trivialCount,
     targetStartScore,
     outcomes: result,
   };
