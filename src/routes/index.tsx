@@ -254,16 +254,9 @@ function Index() {
                 id="player"
                 value={targetPlayer}
                 onChange={(e) => setTargetPlayer(e.target.value)}
-                placeholder="Calvin Jiarui Wang"
                 className="mt-1"
-                list="players"
+                autoComplete="off"
               />
-              <datalist id="players">
-                {pairings.flatMap((p, i) => [
-                  <option key={`w${i}`} value={p[0][0]} />,
-                  <option key={`b${i}`} value={p[1][0]} />,
-                ])}
-              </datalist>
             </div>
             <Button onClick={runCalc} disabled={!pairings.length}>
               <Calculator className="mr-2 h-4 w-4" />
