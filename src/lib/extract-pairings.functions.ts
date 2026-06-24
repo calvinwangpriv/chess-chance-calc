@@ -5,7 +5,8 @@ const InputSchema = z.object({
   imageDataUrl: z.string().min(1),
 });
 
-export type Pairing = [[string, number], [string, number]];
+export type GameResult = "1-0" | "0-1" | "1/2" | null;
+export type Pairing = [[string, number], [string, number], GameResult];
 
 export const extractPairings = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
@@ -14,11 +15,26 @@ export const extractPairings = createServerFn({ method: "POST" })
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
     const systemPrompt = `You are given an image of a chess tournament pairing sheet (SwissSys format).
-Each row has: Board number, White player number, (Result), White player name with rating and score, Black player number, (Result), Black player name with rating and score.
-Player entries look like "Name (RATING SCORE)" e.g. "Daniel Yassky (2080 5.0)". The score is the last number in parens.
-Extract ALL rows and return STRICT JSON only (no markdown, no commentary) of shape:
-{"pairings":[{"white":{"name":"...","score":0.0},"black":{"name":"...","score":0.0}}, ...]}
-Score must be a number (e.g. 4.5, 5.0, 3.0). Use the player's full displayed name (omit titles like WCM if present? KEEP titles like "WCM Lilian Wang" exactly as shown). Preserve asterisks and annotations like "Jude Bae* Torrens r/e" exactly as shown but WITHOUT the rating/score. If a row has a bye or missing opponent, skip it.`;
+Columns: Bd (board), # (white player number), Res (white result), White (name and "(RATING SCORE)"), # (black number), Res (black result), Black (name and "(RATING SCORE)").
+
+The "Res" columns show the result of THIS round's game if it has finished:
+- "1" or "1.0" means that side won
+- "0" or "0.0" means that side lost
+- "½" or "0.5" or "1/2" means draw
+- blank/empty means the game is still ongoing (no result yet)
+
+The score in the player's "(RATING SCORE)" is the player's score BEFORE this round.
+
+Return STRICT JSON only (no markdown, no commentary) of shape:
+{"pairings":[{"white":{"name":"...","score":0.0},"black":{"name":"...","score":0.0},"result":"1-0"|"0-1"|"1/2"|null}, ...]}
+
+"result" rules:
+- "1-0" if white's Res is 1 (or black's Res is 0)
+- "0-1" if black's Res is 1 (or white's Res is 0)
+- "1/2" if either Res cell shows ½/0.5
+- null if both Res cells are blank (game ongoing)
+
+Keep player names exactly as shown including titles ("WCM Lilian Wang") and annotations ("Jude Bae* Torrens r/e"), but without the "(RATING SCORE)" part. Skip bye rows.`;
 
     const body = {
       model: "google/gemini-3-flash-preview",
@@ -61,9 +77,19 @@ Score must be a number (e.g. 4.5, 5.0, 3.0). Use the player's full displayed nam
       parsed = match ? JSON.parse(match[0]) : { pairings: [] };
     }
 
+    const normResult = (r: any): GameResult => {
+      if (r === null || r === undefined || r === "") return null;
+      const s = String(r).trim().toLowerCase();
+      if (s === "1-0" || s === "1" || s === "1.0") return "1-0";
+      if (s === "0-1" || s === "0" || s === "0.0") return "0-1";
+      if (s === "1/2" || s === "0.5" || s === "½" || s === "draw" || s === "1/2-1/2") return "1/2";
+      return null;
+    };
+
     const pairings: Pairing[] = (parsed.pairings ?? []).map((p: any) => [
       [String(p.white?.name ?? "").trim(), Number(p.white?.score ?? 0)],
       [String(p.black?.name ?? "").trim(), Number(p.black?.score ?? 0)],
+      normResult(p.result),
     ]);
 
     return { pairings };

@@ -9,8 +9,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { Loader2, Upload, Trophy, Calculator } from "lucide-react";
-import { extractPairings, type Pairing } from "@/lib/extract-pairings.functions";
+import { extractPairings, type Pairing, type GameResult } from "@/lib/extract-pairings.functions";
 import { calculatePayouts, type CalcResult } from "@/lib/calculate-payouts";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -39,7 +46,7 @@ function Index() {
   const extract = useServerFn(extractPairings);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
-  const [prizes, setPrizes] = useState("1800, 900, 500, 300, 200, 150, 100, 75, 50, 25");
+  const [prizes, setPrizes] = useState("");
   const [targetPlayer, setTargetPlayer] = useState("");
   const [pairings, setPairings] = useState<Pairing[]>([]);
   const [result, setResult] = useState<CalcResult | null>(null);
@@ -87,14 +94,21 @@ function Index() {
     }
   };
 
-  const updatePairing = (i: number, field: "wn" | "ws" | "bn" | "bs", value: string) => {
+  const updatePairing = (
+    i: number,
+    field: "wn" | "ws" | "bn" | "bs" | "res",
+    value: string,
+  ) => {
     setPairings((prev) => {
-      const next = prev.map((p) => [[...p[0]], [...p[1]]] as Pairing);
+      const next = prev.map(
+        (p) => [[...p[0]] as [string, number], [...p[1]] as [string, number], p[2]] as Pairing,
+      );
       const g = next[i];
       if (field === "wn") g[0][0] = value;
       else if (field === "ws") g[0][1] = Number(value);
       else if (field === "bn") g[1][0] = value;
-      else g[1][1] = Number(value);
+      else if (field === "bs") g[1][1] = Number(value);
+      else g[2] = (value === "none" ? null : (value as GameResult));
       return next;
     });
   };
@@ -159,6 +173,7 @@ function Index() {
                       <th className="px-2 py-2 w-20">Score</th>
                       <th className="px-2 py-2">Black</th>
                       <th className="px-2 py-2 w-20">Score</th>
+                      <th className="px-2 py-2 w-32">Result</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -193,6 +208,22 @@ function Index() {
                             onChange={(e) => updatePairing(i, "bs", e.target.value)}
                           />
                         </td>
+                        <td className="px-2 py-1">
+                          <Select
+                            value={p[2] ?? "none"}
+                            onValueChange={(v) => updatePairing(i, "res", v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Ongoing</SelectItem>
+                              <SelectItem value="1-0">1–0 (White wins)</SelectItem>
+                              <SelectItem value="1/2">½–½ (Draw)</SelectItem>
+                              <SelectItem value="0-1">0–1 (Black wins)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -223,16 +254,9 @@ function Index() {
                 id="player"
                 value={targetPlayer}
                 onChange={(e) => setTargetPlayer(e.target.value)}
-                placeholder="Calvin Jiarui Wang"
                 className="mt-1"
-                list="players"
+                autoComplete="off"
               />
-              <datalist id="players">
-                {pairings.flatMap((p, i) => [
-                  <option key={`w${i}`} value={p[0][0]} />,
-                  <option key={`b${i}`} value={p[1][0]} />,
-                ])}
-              </datalist>
             </div>
             <Button onClick={runCalc} disabled={!pairings.length}>
               <Calculator className="mr-2 h-4 w-4" />
