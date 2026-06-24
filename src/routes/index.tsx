@@ -173,6 +173,7 @@ function Index() {
                       <th className="px-2 py-2 w-20">Score</th>
                       <th className="px-2 py-2">Black</th>
                       <th className="px-2 py-2 w-20">Score</th>
+                      <th className="px-2 py-2 w-32">Result</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -206,6 +207,22 @@ function Index() {
                             value={p[1][1]}
                             onChange={(e) => updatePairing(i, "bs", e.target.value)}
                           />
+                        </td>
+                        <td className="px-2 py-1">
+                          <Select
+                            value={p[2] ?? "none"}
+                            onValueChange={(v) => updatePairing(i, "res", v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Ongoing</SelectItem>
+                              <SelectItem value="1-0">1–0 (White wins)</SelectItem>
+                              <SelectItem value="1/2">½–½ (Draw)</SelectItem>
+                              <SelectItem value="0-1">0–1 (Black wins)</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </td>
                       </tr>
                     ))}
