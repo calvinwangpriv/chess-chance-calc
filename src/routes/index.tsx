@@ -195,12 +195,14 @@ function Index() {
                         <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
                         <td className="px-2 py-1">
                           <Input
+                            aria-label={`Board ${i + 1} white player name`}
                             value={p[0][0]}
                             onChange={(e) => updatePairing(i, "wn", e.target.value)}
                           />
                         </td>
                         <td className="px-2 py-1">
                           <Input
+                            aria-label={`Board ${i + 1} white score`}
                             type="number"
                             step="0.5"
                             value={p[0][1]}
@@ -209,12 +211,14 @@ function Index() {
                         </td>
                         <td className="px-2 py-1">
                           <Input
+                            aria-label={`Board ${i + 1} black player name`}
                             value={p[1][0]}
                             onChange={(e) => updatePairing(i, "bn", e.target.value)}
                           />
                         </td>
                         <td className="px-2 py-1">
                           <Input
+                            aria-label={`Board ${i + 1} black score`}
                             type="number"
                             step="0.5"
                             value={p[1][1]}
