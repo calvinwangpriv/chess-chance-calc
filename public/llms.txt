@@ -1,0 +1,7 @@
+# Chess Prize Odds Calculator
+
+> Upload a SwissSys pairing sheet, enter the prize list and your name, and instantly see your expected prize money if you win, draw, or lose the final round.
+
+## Pages
+
+- [Home](/): Upload pairings, edit results, and calculate prize odds.

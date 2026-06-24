@@ -28,7 +28,15 @@ export const Route = createFileRoute("/")({
         content:
           "Upload a SwissSys final-round pairing sheet to calculate your win/draw/lose prize odds.",
       },
+      { property: "og:title", content: "Chess Prize Odds Calculator" },
+      {
+        property: "og:description",
+        content:
+          "Upload a SwissSys pairing sheet and instantly see your expected prize money for each result.",
+      },
+      { property: "og:url", content: "/" },
     ],
+    links: [{ rel: "canonical", href: "/" }],
   }),
   component: Index,
 });
@@ -132,14 +140,19 @@ function Index() {
       <main className="mx-auto max-w-5xl px-6 py-8 space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Upload className="h-5 w-5" /> 1. Upload pairing sheet
+            <CardTitle className="text-lg">
+              <h2 className="flex items-center gap-2">
+                <Upload className="h-5 w-5" /> 1. Upload pairing sheet
+              </h2>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Label htmlFor="pairing-image">Pairing sheet image</Label>
             <Input
+              id="pairing-image"
               type="file"
               accept="image/*"
+              aria-label="Upload pairing sheet image"
               onChange={(e) => onFile(e.target.files?.[0] ?? null)}
             />
             {imagePreview && (
@@ -160,7 +173,7 @@ function Index() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">
-                2. Verify extracted pairings ({pairings.length})
+                <h2>2. Verify extracted pairings ({pairings.length})</h2>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -182,12 +195,14 @@ function Index() {
                         <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
                         <td className="px-2 py-1">
                           <Input
+                            aria-label={`Board ${i + 1} white player name`}
                             value={p[0][0]}
                             onChange={(e) => updatePairing(i, "wn", e.target.value)}
                           />
                         </td>
                         <td className="px-2 py-1">
                           <Input
+                            aria-label={`Board ${i + 1} white score`}
                             type="number"
                             step="0.5"
                             value={p[0][1]}
@@ -196,12 +211,14 @@ function Index() {
                         </td>
                         <td className="px-2 py-1">
                           <Input
+                            aria-label={`Board ${i + 1} black player name`}
                             value={p[1][0]}
                             onChange={(e) => updatePairing(i, "bn", e.target.value)}
                           />
                         </td>
                         <td className="px-2 py-1">
                           <Input
+                            aria-label={`Board ${i + 1} black score`}
                             type="number"
                             step="0.5"
                             value={p[1][1]}
@@ -235,7 +252,7 @@ function Index() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">3. Prize list & your name</CardTitle>
+            <CardTitle className="text-lg"><h2>3. Prize list &amp; your name</h2></CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -268,7 +285,7 @@ function Index() {
         {result && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Results</CardTitle>
+              <CardTitle className="text-lg"><h2>Results</h2></CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <p className="text-sm text-muted-foreground">
@@ -277,9 +294,9 @@ function Index() {
               </p>
               {result.outcomes.map((o) => (
                 <div key={o.outcome} className="space-y-2">
-                  <h3 className="font-semibold">
+                  <h2 className="font-semibold text-base">
                     If I {o.outcome.toLowerCase()}:
-                  </h3>
+                  </h2>
                   {o.totalScenarios === 0 ? (
                     <p className="text-sm text-muted-foreground">No scenarios.</p>
                   ) : o.exactPayout !== undefined ? (
