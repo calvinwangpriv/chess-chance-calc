@@ -70,31 +70,44 @@ export function calculatePayouts(
     throw new Error(`Player "${targetPlayer}" not found in pairings.`);
   }
 
-  const critical: Pairing[] = [];
-  const trivial: Pairing[] = [];
+  const baseline: Record<string, number> = {};
+  const variable: Pairing[] = [];
+  let trivialCount = 0;
+
   for (const game of pairings) {
-    const [w, b] = game;
-    if (w[0] === targetPlayer || b[0] === targetPlayer) {
-      critical.push(game);
+    const [w, b, res] = game;
+    const isTarget = w[0] === targetPlayer || b[0] === targetPlayer;
+
+    // Game already finished — apply the actual result. If it's the target's
+    // game, we still push it into `variable` (with a single outcome) so the
+    // result lands in the right Win/Draw/Lose bucket.
+    if (res !== null) {
+      const [wOut, bOut] = resultToOutcomes(res)[0];
+      if (!isTarget) {
+        baseline[w[0]] = w[1] + wOut;
+        baseline[b[0]] = b[1] + bOut;
+        continue;
+      }
+      variable.push(game);
       continue;
     }
+
+    if (isTarget) {
+      variable.push(game);
+      continue;
+    }
+
+    // Ongoing non-target game: skip if it can't possibly affect target's prize.
     const wMax = w[1] + 1.0;
     const bMax = b[1] + 1.0;
-    if (wMax < targetStartScore && bMax < targetStartScore) trivial.push(game);
-    else critical.push(game);
+    if (wMax < targetStartScore && bMax < targetStartScore) {
+      baseline[w[0]] = w[1] + 0.5;
+      baseline[b[0]] = b[1] + 0.5;
+      trivialCount++;
+    } else {
+      variable.push(game);
+    }
   }
-
-  const baseline: Record<string, number> = {};
-  for (const [w, b] of trivial) {
-    baseline[w[0]] = w[1] + 0.5;
-    baseline[b[0]] = b[1] + 0.5;
-  }
-
-  const outcomes: [number, number][] = [
-    [1.0, 0.0],
-    [0.5, 0.5],
-    [0.0, 1.0],
-  ];
 
   const dist = {
     Win: new Map<number, number>(),
@@ -102,26 +115,28 @@ export function calculatePayouts(
     Lose: new Map<number, number>(),
   };
 
-  const n = critical.length;
-  const total = Math.pow(3, n);
+  const optionsPerGame = variable.map((g) => resultToOutcomes(g[2]));
+  const radix = optionsPerGame.map((o) => o.length);
+  const total = radix.reduce((a, b) => a * b, 1);
   if (total > 2_000_000) {
     throw new Error(
       `Too many scenarios (${total.toLocaleString()}). Too many boards near your score to simulate.`,
     );
   }
 
+  const n = variable.length;
   const scenario = new Array<number>(n).fill(0);
   for (let s = 0; s < total; s++) {
     let rem = s;
     for (let i = 0; i < n; i++) {
-      scenario[i] = rem % 3;
-      rem = Math.floor(rem / 3);
+      scenario[i] = rem % radix[i];
+      rem = Math.floor(rem / radix[i]);
     }
     const finalScores: Record<string, number> = { ...baseline };
     let targetOutcome: "Win" | "Draw" | "Lose" = "Lose";
     for (let i = 0; i < n; i++) {
-      const game = critical[i];
-      const out = outcomes[scenario[i]];
+      const game = variable[i];
+      const out = optionsPerGame[i][scenario[i]];
       finalScores[game[0][0]] = game[0][1] + out[0];
       finalScores[game[1][0]] = game[1][1] + out[1];
       if (game[0][0] === targetPlayer) {
