@@ -11,8 +11,8 @@ export type Pairing = [[string, number], [string, number], GameResult];
 export const extractPairings = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
   .handler(async ({ data }): Promise<{ pairings: Pairing[] }> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const key = process.env.OPENAI_API_KEY;
+    if (!key) throw new Error("Missing OPENAI_API_KEY");
 
     const systemPrompt = `You are given an image of a chess tournament pairing sheet (SwissSys format).
 Columns: Bd (board), # (white player number), Res (white result), White (name and "(RATING SCORE)"), # (black number), Res (black result), Black (name and "(RATING SCORE)").
@@ -37,7 +37,7 @@ Return STRICT JSON only (no markdown, no commentary) of shape:
 Keep player names exactly as shown including titles ("WCM Lilian Wang") and annotations ("Jude Bae* Torrens r/e"), but without the "(RATING SCORE)" part. Skip bye rows.`;
 
     const body = {
-      model: "google/gemini-3-flash-preview",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         {
@@ -51,7 +51,7 @@ Keep player names exactly as shown including titles ("WCM Lilian Wang") and anno
       response_format: { type: "json_object" },
     };
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -63,7 +63,7 @@ Keep player names exactly as shown including titles ("WCM Lilian Wang") and anno
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
       if (res.status === 429) throw new Error("Rate limited. Please try again shortly.");
-      if (res.status === 402) throw new Error("AI credits exhausted. Add credits in your workspace.");
+      if (res.status === 401) throw new Error("Invalid OpenAI API key.");
       throw new Error(`AI extraction failed (${res.status}): ${txt}`);
     }
 
