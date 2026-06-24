@@ -94,14 +94,21 @@ function Index() {
     }
   };
 
-  const updatePairing = (i: number, field: "wn" | "ws" | "bn" | "bs", value: string) => {
+  const updatePairing = (
+    i: number,
+    field: "wn" | "ws" | "bn" | "bs" | "res",
+    value: string,
+  ) => {
     setPairings((prev) => {
-      const next = prev.map((p) => [[...p[0]], [...p[1]]] as Pairing);
+      const next = prev.map(
+        (p) => [[...p[0]] as [string, number], [...p[1]] as [string, number], p[2]] as Pairing,
+      );
       const g = next[i];
       if (field === "wn") g[0][0] = value;
       else if (field === "ws") g[0][1] = Number(value);
       else if (field === "bn") g[1][0] = value;
-      else g[1][1] = Number(value);
+      else if (field === "bs") g[1][1] = Number(value);
+      else g[2] = (value === "none" ? null : (value as GameResult));
       return next;
     });
   };
