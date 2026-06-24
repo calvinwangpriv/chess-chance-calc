@@ -252,7 +252,7 @@ function Index() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">3. Prize list & your name</CardTitle>
+            <CardTitle className="text-lg"><h2>3. Prize list &amp; your name</h2></CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
