@@ -173,7 +173,7 @@ function Index() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">
-                2. Verify extracted pairings ({pairings.length})
+                <h2>2. Verify extracted pairings ({pairings.length})</h2>
               </CardTitle>
             </CardHeader>
             <CardContent>
