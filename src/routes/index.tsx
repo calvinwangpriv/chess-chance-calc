@@ -9,8 +9,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { Loader2, Upload, Trophy, Calculator } from "lucide-react";
-import { extractPairings, type Pairing } from "@/lib/extract-pairings.functions";
+import { extractPairings, type Pairing, type GameResult } from "@/lib/extract-pairings.functions";
 import { calculatePayouts, type CalcResult } from "@/lib/calculate-payouts";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/")({
   head: () => ({
