@@ -193,6 +193,6 @@ export function calculatePayouts(
     criticalBoards: critical.length,
     trivialBoards: trivial.length,
     targetStartScore,
-    outcomes,
+    outcomes: result,
   };
 }
