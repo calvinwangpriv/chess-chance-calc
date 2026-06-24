@@ -145,9 +145,12 @@ function Index() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Label htmlFor="pairing-image">Pairing sheet image</Label>
             <Input
+              id="pairing-image"
               type="file"
               accept="image/*"
+              aria-label="Upload pairing sheet image"
               onChange={(e) => onFile(e.target.files?.[0] ?? null)}
             />
             {imagePreview && (
