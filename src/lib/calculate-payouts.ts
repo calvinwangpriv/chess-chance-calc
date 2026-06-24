@@ -1,4 +1,16 @@
-export type Pairing = [[string, number], [string, number]];
+export type GameResult = "1-0" | "0-1" | "1/2" | null;
+export type Pairing = [[string, number], [string, number], GameResult];
+
+function resultToOutcomes(r: GameResult): [number, number][] {
+  if (r === "1-0") return [[1.0, 0.0]];
+  if (r === "0-1") return [[0.0, 1.0]];
+  if (r === "1/2") return [[0.5, 0.5]];
+  return [
+    [1.0, 0.0],
+    [0.5, 0.5],
+    [0.0, 1.0],
+  ];
+}
 
 export interface OutcomeBin {
   start: number;
