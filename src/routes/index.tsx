@@ -28,7 +28,15 @@ export const Route = createFileRoute("/")({
         content:
           "Upload a SwissSys final-round pairing sheet to calculate your win/draw/lose prize odds.",
       },
+      { property: "og:title", content: "Chess Prize Odds Calculator" },
+      {
+        property: "og:description",
+        content:
+          "Upload a SwissSys pairing sheet and instantly see your expected prize money for each result.",
+      },
+      { property: "og:url", content: "/" },
     ],
+    links: [{ rel: "canonical", href: "/" }],
   }),
   component: Index,
 });
