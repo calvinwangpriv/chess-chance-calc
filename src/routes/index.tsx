@@ -250,37 +250,39 @@ function Index() {
           </Card>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg"><h2>3. Prize list &amp; your name</h2></CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="prizes">Prize list (1st, 2nd, 3rd, …)</Label>
-              <Textarea
-                id="prizes"
-                value={prizes}
-                onChange={(e) => setPrizes(e.target.value)}
-                placeholder="1800, 900, 500, 300, 200, 150, 100, 75, 50, 25"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="player">Your name (exactly as it appears in the pairings)</Label>
-              <Input
-                id="player"
-                value={targetPlayer}
-                onChange={(e) => setTargetPlayer(e.target.value)}
-                className="mt-1"
-                autoComplete="off"
-              />
-            </div>
-            <Button onClick={runCalc} disabled={!pairings.length}>
-              <Calculator className="mr-2 h-4 w-4" />
-              Calculate odds
-            </Button>
-          </CardContent>
-        </Card>
+        {pairings.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg"><h2>3. Prize list &amp; your name</h2></CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="prizes">Prize list (1st, 2nd, 3rd, …)</Label>
+                <Textarea
+                  id="prizes"
+                  value={prizes}
+                  onChange={(e) => setPrizes(e.target.value)}
+                  placeholder="1800, 900, 500, 300, 200, 150, 100, 75, 50, 25"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="player">Your name (exactly as it appears in the pairings)</Label>
+                <Input
+                  id="player"
+                  value={targetPlayer}
+                  onChange={(e) => setTargetPlayer(e.target.value)}
+                  className="mt-1"
+                  autoComplete="off"
+                />
+              </div>
+              <Button onClick={runCalc} disabled={!pairings.length}>
+                <Calculator className="mr-2 h-4 w-4" />
+                Calculate odds
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {result && (
           <Card>
