@@ -140,8 +140,10 @@ function Index() {
       <main className="mx-auto max-w-5xl px-6 py-8 space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Upload className="h-5 w-5" /> 1. Upload pairing sheet
+            <CardTitle className="text-lg">
+              <h2 className="flex items-center gap-2">
+                <Upload className="h-5 w-5" /> 1. Upload pairing sheet
+              </h2>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
