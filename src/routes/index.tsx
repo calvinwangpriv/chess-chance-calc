@@ -232,96 +232,96 @@ function Index() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto rounded-lg border border-border/60">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border/60 text-left text-muted-foreground bg-muted/40">
-                      <th className="px-2 py-2 w-8">#</th>
-                      <th className="px-2 py-2">White</th>
-                      <th className="px-2 py-2 w-20">Rating</th>
-                      <th className="px-2 py-2 w-20">Score</th>
-                      <th className="px-2 py-2">Black</th>
-                      <th className="px-2 py-2 w-20">Rating</th>
-                      <th className="px-2 py-2 w-20">Score</th>
-                      <th className="px-2 py-2 w-32">Result</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pairings.map((p, i) => (
-                      <tr key={i} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
-                        <td className="px-2 py-1 text-muted-foreground tabular-nums">{i + 1}</td>
-                        <td className="px-2 py-1">
-                          <Input
-                            aria-label={`Board ${i + 1} white player name`}
-                            value={p[0][0]}
-                            onChange={(e) => updatePairing(i, "wn", e.target.value)}
-                          />
-                        </td>
-                        <td className="px-2 py-1">
-                          <Input
-                            aria-label={`Board ${i + 1} white rating`}
-                            type="number"
-                            value={p[0][2] ?? ""}
-                            onChange={(e) => updatePairing(i, "wr", e.target.value)}
-                          />
-                        </td>
-                        <td className="px-2 py-1">
-                          <Input
-                            aria-label={`Board ${i + 1} white score`}
-                            type="number"
-                            step="0.5"
-                            value={p[0][1]}
-                            onChange={(e) => updatePairing(i, "ws", e.target.value)}
-                          />
-                        </td>
-                        <td className="px-2 py-1">
-                          <Input
-                            aria-label={`Board ${i + 1} black player name`}
-                            value={p[1][0]}
-                            onChange={(e) => updatePairing(i, "bn", e.target.value)}
-                          />
-                        </td>
-                        <td className="px-2 py-1">
-                          <Input
-                            aria-label={`Board ${i + 1} black rating`}
-                            type="number"
-                            value={p[1][2] ?? ""}
-                            onChange={(e) => updatePairing(i, "br", e.target.value)}
-                          />
-                        </td>
-                        <td className="px-2 py-1">
-                          <Input
-                            aria-label={`Board ${i + 1} black score`}
-                            type="number"
-                            step="0.5"
-                            value={p[1][1]}
-                            onChange={(e) => updatePairing(i, "bs", e.target.value)}
-                          />
-                        </td>
-                        <td className="px-2 py-1">
-                          <Select
-                            value={p[2] ?? "none"}
-                            onValueChange={(v) => updatePairing(i, "res", v)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">Ongoing</SelectItem>
-                              <SelectItem value="1-0">1–0 (White wins)</SelectItem>
-                              <SelectItem value="1/2">½–½ (Draw)</SelectItem>
-                              <SelectItem value="0-1">0–1 (Black wins)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-3">
+                {pairings.map((p, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg border border-border/60 bg-card p-3 hover:bg-muted/20 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/15 text-primary text-xs font-bold tabular-nums">
+                        {i + 1}
+                      </span>
+                      <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                        Board {i + 1}
+                      </span>
+                    </div>
+
+                    {/* Row 1: White name | Result | Black name */}
+                    <div className="grid grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)] gap-2 items-center">
+                      <Input
+                        aria-label={`Board ${i + 1} white player name`}
+                        placeholder="White"
+                        value={p[0][0]}
+                        onChange={(e) => updatePairing(i, "wn", e.target.value)}
+                      />
+                      <Select
+                        value={p[2] ?? "none"}
+                        onValueChange={(v) => updatePairing(i, "res", v)}
+                      >
+                        <SelectTrigger aria-label={`Board ${i + 1} result`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">---</SelectItem>
+                          <SelectItem value="1-0">1-0</SelectItem>
+                          <SelectItem value="1/2">0.5-0.5</SelectItem>
+                          <SelectItem value="0-1">0-1</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        aria-label={`Board ${i + 1} black player name`}
+                        placeholder="Black"
+                        value={p[1][0]}
+                        onChange={(e) => updatePairing(i, "bn", e.target.value)}
+                      />
+                    </div>
+
+                    {/* Row 2: White rating + score | spacer | Black rating + score */}
+                    <div className="grid grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)] gap-2 mt-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          aria-label={`Board ${i + 1} white rating`}
+                          type="number"
+                          placeholder="Rating"
+                          value={p[0][2] ?? ""}
+                          onChange={(e) => updatePairing(i, "wr", e.target.value)}
+                        />
+                        <Input
+                          aria-label={`Board ${i + 1} white score`}
+                          type="number"
+                          step="0.5"
+                          placeholder="Score"
+                          value={p[0][1]}
+                          onChange={(e) => updatePairing(i, "ws", e.target.value)}
+                        />
+                      </div>
+                      <div />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          aria-label={`Board ${i + 1} black rating`}
+                          type="number"
+                          placeholder="Rating"
+                          value={p[1][2] ?? ""}
+                          onChange={(e) => updatePairing(i, "br", e.target.value)}
+                        />
+                        <Input
+                          aria-label={`Board ${i + 1} black score`}
+                          type="number"
+                          step="0.5"
+                          placeholder="Score"
+                          value={p[1][1]}
+                          onChange={(e) => updatePairing(i, "bs", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         )}
+
 
         {pairings.length > 0 && (
           <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
