@@ -178,7 +178,7 @@ function Index() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10 space-y-6">
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-10 space-y-6">
         <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
           <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
           <CardHeader>
