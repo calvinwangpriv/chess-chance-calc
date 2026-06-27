@@ -419,12 +419,18 @@ function Index() {
               >
                 <Crown className="h-5 w-5 text-accent shrink-0 mt-0.5" />
                 <div>
-                  <div className="text-xs uppercase tracking-wider font-semibold text-accent-foreground/80 mb-1">
+                  <div className="text-xs uppercase tracking-wider font-semibold text-accent-foreground/80 mb-1 flex items-center gap-2">
                     What you're rooting for
+                    {summaryBusy && <Loader2 className="h-3 w-3 animate-spin" />}
                   </div>
-                  <p className="text-sm leading-relaxed">{result.bestSummary}</p>
+                  <p className="text-sm leading-relaxed">{aiSummary ?? result.bestSummary}</p>
                 </div>
               </div>
+
+              {/* spacer */}
+              {false && (
+                <p className="text-sm leading-relaxed">{result.bestSummary}</p>
+              )}
 
               {result.outcomes.map((o) => {
                 const s = outcomeStyles[o.outcome];
