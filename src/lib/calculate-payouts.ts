@@ -36,6 +36,26 @@ export interface OutcomeResult {
   totalScenarios: number;
 }
 
+export interface SummaryData {
+  targetPlayer: string;
+  bestPayout: number;
+  bestSource: string; // "overall" | class label | "none"
+  bestClassPrizeLabel: string | null;
+  targetWish: string | null; // "win" | "draw" | "win or draw" | etc, null if no preference
+  otherBoardNeeds: string[]; // phrases like "Alice beats Bob"
+  classCompetitionNeeds: string[]; // phrases about eliminating class competitors
+  outcomeStats: {
+    outcome: "Win" | "Draw" | "Lose";
+    totalScenarios: number;
+    avgPayout: number;
+    minPayout: number;
+    maxPayout: number;
+  }[];
+  totalScenarios: number;
+  criticalBoards: number;
+  trivialBoards: number;
+}
+
 export interface CalcResult {
   totalBoards: number;
   criticalBoards: number;
@@ -44,6 +64,7 @@ export interface CalcResult {
   outcomes: OutcomeResult[];
   bestPayout: number;
   bestSummary: string;
+  summaryData: SummaryData;
 }
 
 function getCleanBins(absMin: number, absMax: number): [number, number][] {
@@ -440,8 +461,8 @@ export function calculatePayouts(
   }
 
   // Class-prize specific rooting guidance.
+  const classPhrases: string[] = [];
   if (bestClassPrize) {
-    const classPhrases: string[] = [];
     for (let i = 0; i < n; i++) {
       if (radix[i] === 1) continue;
       const game = variable[i];
@@ -482,6 +503,26 @@ export function calculatePayouts(
   }
   const bestSummary = sentences.join(" ");
 
+  const summaryData: SummaryData = {
+    targetPlayer,
+    bestPayout: bestPayout === -Infinity ? 0 : bestPayout,
+    bestSource,
+    bestClassPrizeLabel: bestClassPrize?.label ?? null,
+    targetWish,
+    otherBoardNeeds: phrases,
+    classCompetitionNeeds: classPhrases,
+    outcomeStats: outcomeStats.map((s) => ({
+      outcome: s.outcome,
+      totalScenarios: s.total,
+      avgPayout: s.avg,
+      minPayout: s.min,
+      maxPayout: s.max,
+    })),
+    totalScenarios: total,
+    criticalBoards: variable.length,
+    trivialBoards: trivialCount,
+  };
+
   return {
     totalBoards: pairings.length,
     criticalBoards: variable.length,
@@ -490,6 +531,7 @@ export function calculatePayouts(
     outcomes: result,
     bestPayout: bestPayout === -Infinity ? 0 : bestPayout,
     bestSummary,
+    summaryData,
   };
 }
 
