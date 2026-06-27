@@ -376,12 +376,12 @@ function Index() {
               </div>
               <Button
                 onClick={runCalc}
-                disabled={!pairings.length}
-                className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02]"
+                disabled={!pairings.length || calcBusy}
+                className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02] disabled:opacity-70 disabled:hover:scale-100"
                 style={{ background: "var(--gradient-hero)" }}
               >
-                <Calculator className="mr-2 h-4 w-4" />
-                Calculate odds
+                {calcBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Calculator className="mr-2 h-4 w-4" />}
+                {calcBusy ? "Calculating…" : "Calculate odds"}
               </Button>
             </CardContent>
           </Card>
