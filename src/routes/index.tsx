@@ -343,23 +343,23 @@ function Index() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="prizes">Prize list (1st, 2nd, 3rd, …)</Label>
-                <Textarea
+                <Input
                   id="prizes"
                   value={prizes}
                   onChange={(e) => setPrizes(e.target.value)}
-                  placeholder="12000, 6000, 3000, 1500, 1000, 800, 600, 500, 400, 400"
+                  placeholder="Ex: 12000, 6000, 3000, 1500, 1000, 800, 600, 500, 400, 400"
                   className="mt-1"
                 />
               </div>
               <div>
                 <Label htmlFor="class-prizes">
-                  Subsection prize list (optional) — one per line
+                  Subsection prize list (optional)
                 </Label>
                 <Textarea
                   id="class-prizes"
                   value={classPrizesText}
                   onChange={(e) => setClassPrizesText(e.target.value)}
-                  placeholder={"Under 2000: 600, 400, 200\nUnder 1800: 500, 300"}
+                  placeholder={"Ex: Under 2000: 600, 400, 200\nUnder 1800: 500, 300"}
                   className="mt-1"
                   rows={4}
                 />
@@ -446,11 +446,11 @@ function Index() {
                                 style={{ width: `${b.percent}%` }}
                               />
                             </div>
-                            <div className="w-44 text-right text-muted-foreground tabular-nums text-xs">
-                              <span className="font-medium text-foreground">${b.start}–${b.end}</span>
-                              <span className="ml-2 opacity-70">
-                                ({b.count.toLocaleString()}/{o.totalScenarios.toLocaleString()})
-                              </span>
+                            <div className="w-28 text-right tabular-nums font-medium text-foreground">
+                              ${b.start}–${b.end}
+                            </div>
+                            <div className="w-24 text-right text-muted-foreground tabular-nums text-xs opacity-70">
+                              ({b.count.toLocaleString()}/{o.totalScenarios.toLocaleString()})
                             </div>
                           </div>
                         ))}
