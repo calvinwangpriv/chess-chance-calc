@@ -79,6 +79,7 @@ function Index() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [prizes, setPrizes] = useState("");
+  const [classPrizesText, setClassPrizesText] = useState("");
   const [targetPlayer, setTargetPlayer] = useState("");
   const [pairings, setPairings] = useState<Pairing[]>([]);
   const [result, setResult] = useState<CalcResult | null>(null);
