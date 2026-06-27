@@ -429,6 +429,30 @@ export function calculatePayouts(
   } else {
     sentences.push(`To lock it in you also need ${phrases.length} other board results to break a specific way (e.g. ${phrases.slice(0, 2).join("; ")}; and ${phrases.length - 2} more).`);
   }
+
+  // Class-prize specific rooting guidance.
+  const bestClassPrize = bestSource !== "overall" && bestSource !== "none"
+    ? classPrizes.find((cp) => cp.label === bestSource)
+    : null;
+  if (bestClassPrize) {
+    const classPhrases: string[] = [];
+    for (let i = 0; i < n; i++) {
+      if (radix[i] === 1) continue;
+      const game = variable[i];
+      const [w, b] = game;
+      const mask = bestMasks[i];
+      if (mask === 0b111) continue;
+      if (w[0] === targetPlayer || b[0] === targetPlayer) continue;
+      const wElig = classEligible(w[2], bestClassPrize);
+      const bElig = classEligible(b[2], bestClassPrize);
+      if (wElig && mask === 0b100) classPhrases.push(`${w[0]} loses to ${b[0]}`);
+      else if (bElig && mask === 0b001) classPhrases.push(`${b[0]} loses to ${w[0]}`);
+    }
+    if (classPhrases.length) {
+      sentences.push(`For the ${bestClassPrize.label} prize, you want ${classPhrases.join("; ")} to eliminate competition.`);
+    }
+  }
+
   const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`;
   const parts: string[] = [];
   if (winStat.total) parts.push(`win → avg ${fmt(winStat.avg)} (worst ${fmt(winStat.min)}, best ${fmt(winStat.max)})`);
