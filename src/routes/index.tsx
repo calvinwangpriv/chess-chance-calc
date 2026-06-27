@@ -163,7 +163,7 @@ function Index() {
                 Chess Prize Odds
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Upload a SwissSys pairing sheet · enter the prize list · see exactly what you stand to win.
+                Upload a SwissSys pairing sheet · Enter the prize list · See exactly what you stand to win.
               </p>
             </div>
           </div>
