@@ -84,11 +84,9 @@ function Index() {
   const [targetPlayer, setTargetPlayer] = useState("");
   const [pairings, setPairings] = useState<Pairing[]>([]);
   const [result, setResult] = useState<CalcResult | null>(null);
-  const [aiSummary, setAiSummary] = useState<string | null>(null);
-  const [summaryBusy, setSummaryBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [calcBusy, setCalcBusy] = useState(false);
-  const summarizeFn = useServerFn(summarizeResult);
+
 
   const onFile = async (f: File | null) => {
     setImageFile(f);
