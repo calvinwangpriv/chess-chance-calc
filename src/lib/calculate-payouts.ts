@@ -230,6 +230,7 @@ export function calculatePayouts(
   // Build a plain-language summary of which board results lead to the
   // best possible payout for the target player.
   const phrases: string[] = [];
+  let targetWish: string | null = null;
   for (let i = 0; i < n; i++) {
     if (radix[i] === 1) continue; // finished game, nothing to wish for
     const game = variable[i];
@@ -247,21 +248,57 @@ export function calculatePayouts(
       if (mask & winBit) wants.push("win");
       if (mask & 0b010) wants.push("draw");
       if (mask & loseBit) wants.push("lose");
-      phrases.push(`you need to ${wants.join(" or ")}`);
+      targetWish = wants.join(" or ");
     } else {
       switch (mask) {
-        case 0b001: phrases.push(`${wName} must beat ${bName}`); break;
-        case 0b100: phrases.push(`${bName} must beat ${wName}`); break;
-        case 0b010: phrases.push(`${wName} and ${bName} must draw`); break;
-        case 0b011: phrases.push(`${wName} must not lose to ${bName}`); break;
-        case 0b110: phrases.push(`${bName} must not lose to ${wName}`); break;
-        case 0b101: phrases.push(`${wName} vs ${bName} must not be a draw`); break;
+        case 0b001: phrases.push(`${wName} beats ${bName}`); break;
+        case 0b100: phrases.push(`${bName} beats ${wName}`); break;
+        case 0b010: phrases.push(`${wName} and ${bName} draw`); break;
+        case 0b011: phrases.push(`${wName} doesn't lose to ${bName}`); break;
+        case 0b110: phrases.push(`${bName} doesn't lose to ${wName}`); break;
+        case 0b101: phrases.push(`${wName} vs ${bName} isn't a draw`); break;
       }
     }
   }
-  const bestSummary = phrases.length === 0
-    ? `Your top payout of $${bestPayout} is locked in regardless of any remaining results.`
-    : `To get your top payout of $${bestPayout}, ${phrases.join("; ")}.`;
+
+  // Stats across outcomes for a richer recap.
+  const outcomeStats = (["Win", "Draw", "Lose"] as const).map((o) => {
+    const m = dist[o];
+    const tot = Array.from(m.values()).reduce((a, b) => a + b, 0);
+    const max = tot ? Math.max(...m.keys()) : 0;
+    const min = tot ? Math.min(...m.keys()) : 0;
+    let avg = 0;
+    for (const [cash, c] of m.entries()) avg += cash * c;
+    avg = tot ? avg / tot : 0;
+    return { outcome: o, total: tot, max, min, avg };
+  });
+  const winStat = outcomeStats[0];
+  const loseStat = outcomeStats[2];
+  const drawStat = outcomeStats[1];
+
+  const sentences: string[] = [];
+  if (targetWish) {
+    sentences.push(`Your best-case payout is $${bestPayout.toLocaleString()}, and it requires you to ${targetWish} your own game.`);
+  } else {
+    sentences.push(`Your best-case payout is $${bestPayout.toLocaleString()} regardless of how your own game ends.`);
+  }
+  if (phrases.length === 0) {
+    sentences.push(`No specific results from the other critical boards are required to hit it.`);
+  } else if (phrases.length <= 3) {
+    sentences.push(`To lock it in you also need: ${phrases.join("; ")}.`);
+  } else {
+    sentences.push(`To lock it in you also need ${phrases.length} other board results to break a specific way (e.g. ${phrases.slice(0, 2).join("; ")}; and ${phrases.length - 2} more).`);
+  }
+  const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`;
+  const parts: string[] = [];
+  if (winStat.total) parts.push(`win → avg ${fmt(winStat.avg)} (worst ${fmt(winStat.min)}, best ${fmt(winStat.max)})`);
+  if (drawStat.total) parts.push(`draw → avg ${fmt(drawStat.avg)} (worst ${fmt(drawStat.min)}, best ${fmt(drawStat.max)})`);
+  if (loseStat.total) parts.push(`lose → avg ${fmt(loseStat.avg)} (worst ${fmt(loseStat.min)}, best ${fmt(loseStat.max)})`);
+  if (parts.length) sentences.push(`Across all ${total.toLocaleString()} remaining scenarios: ${parts.join("; ")}.`);
+  if (variable.length > 1) {
+    sentences.push(`${variable.length} boards near your score actually move your prize — the other ${trivialCount} are too far away to matter.`);
+  }
+  const bestSummary = sentences.join(" ");
 
   return {
     totalBoards: pairings.length,

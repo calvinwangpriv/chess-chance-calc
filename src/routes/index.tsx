@@ -113,7 +113,8 @@ function Index() {
   const runCalc = () => {
     if (!pairings.length) return toast.error("Extract pairings first.");
     if (!targetPlayer.trim()) return toast.error("Enter your player name.");
-    const prizeArr = prizes
+    const prizeSource = prizes.trim() || "12000, 6000, 3000, 1500, 1000, 800, 600, 500, 400, 400";
+    const prizeArr = prizeSource
       .split(/[,\n]/)
       .map((s) => Number(s.trim().replace(/[^\d.]/g, "")))
       .filter((n) => !Number.isNaN(n) && n > 0);
@@ -163,7 +164,7 @@ function Index() {
                 Chess Prize Odds
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Upload a SwissSys pairing sheet · enter the prize list · see exactly what you stand to win.
+                Upload a SwissSys pairing sheet · Enter the prize list · See exactly what you stand to win.
               </p>
             </div>
           </div>
@@ -172,7 +173,7 @@ function Index() {
 
       <main className="mx-auto max-w-5xl px-6 py-10 space-y-6">
         <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
-          <div className="h-1" style={{ background: "var(--gradient-primary)" }} />
+          <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
           <CardHeader>
             <CardTitle className="text-lg">
               <h2 className="flex items-center gap-2">
@@ -182,15 +183,17 @@ function Index() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Label htmlFor="pairing-image">Pairing sheet image</Label>
-            <Input
-              id="pairing-image"
-              type="file"
-              accept="image/*"
-              aria-label="Upload pairing sheet image"
-              onChange={(e) => onFile(e.target.files?.[0] ?? null)}
-              className="cursor-pointer"
-            />
+            <div>
+              <Label htmlFor="pairing-image">Pairing sheet image</Label>
+              <Input
+                id="pairing-image"
+                type="file"
+                accept="image/*"
+                aria-label="Upload pairing sheet image"
+                onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+                className="cursor-pointer mt-1"
+              />
+            </div>
             {imagePreview && (
               <img
                 src={imagePreview}
@@ -202,7 +205,7 @@ function Index() {
               onClick={runExtract}
               disabled={busy || !imageFile}
               className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02]"
-              style={{ background: "var(--gradient-primary)" }}
+              style={{ background: "var(--gradient-hero)" }}
             >
               {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Extract pairings with AI
@@ -212,7 +215,7 @@ function Index() {
 
         {pairings.length > 0 && (
           <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
-            <div className="h-1" style={{ background: "var(--gradient-accent)" }} />
+            <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
             <CardHeader>
               <CardTitle className="text-lg">
                 <h2 className="flex items-center gap-2">
@@ -352,20 +355,6 @@ function Index() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full bg-muted px-3 py-1 tabular-nums">
-                  {result.totalBoards} boards
-                </span>
-                <span className="rounded-full bg-primary/10 text-primary px-3 py-1 tabular-nums">
-                  {result.criticalBoards} simulated
-                </span>
-                <span className="rounded-full bg-accent/20 text-accent-foreground px-3 py-1 tabular-nums">
-                  {result.trivialBoards} bypassed
-                </span>
-                <span className="rounded-full bg-secondary text-secondary-foreground px-3 py-1 tabular-nums">
-                  start score: {result.targetStartScore}
-                </span>
-              </div>
 
               <div
                 className="rounded-xl border border-accent/40 p-4 flex gap-3 items-start"
