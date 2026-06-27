@@ -427,10 +427,6 @@ function Index() {
                 </div>
               </div>
 
-              {/* spacer */}
-              {false && (
-                <p className="text-sm leading-relaxed">{result.bestSummary}</p>
-              )}
 
               {result.outcomes.map((o) => {
                 const s = outcomeStyles[o.outcome];
