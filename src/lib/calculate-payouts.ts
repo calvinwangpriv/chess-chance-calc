@@ -302,6 +302,9 @@ export function calculatePayouts(
   let bestPayout = -Infinity;
   const bestMasks: number[] = new Array(n).fill(0);
   const bestSourceDist = new Map<string, number>();
+  // Per-game per-outcome avg target payout tracking (for "slightly in your favor" guidance).
+  const gameOutSum: number[][] = variable.map((_, i) => new Array(radix[i]).fill(0));
+  const gameOutCnt: number[][] = variable.map((_, i) => new Array(radix[i]).fill(0));
   for (let s = 0; s < total; s++) {
     let rem = s;
     for (let i = 0; i < n; i++) {
@@ -326,6 +329,10 @@ export function calculatePayouts(
 
     const m = dist[targetOutcome];
     m.set(targetPayout, (m.get(targetPayout) ?? 0) + 1);
+    for (let i = 0; i < n; i++) {
+      gameOutSum[i][scenario[i]] += targetPayout;
+      gameOutCnt[i][scenario[i]] += 1;
+    }
     if (targetPayout > bestPayout) {
       bestPayout = targetPayout;
       bestSourceDist.clear();
@@ -345,6 +352,7 @@ export function calculatePayouts(
       bestSource = src;
     }
   }
+
 
   const result: OutcomeResult[] = (["Win", "Draw", "Lose"] as const).map((outcome) => {
     const m = dist[outcome];
