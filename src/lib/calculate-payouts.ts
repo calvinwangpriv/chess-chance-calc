@@ -36,6 +36,26 @@ export interface OutcomeResult {
   totalScenarios: number;
 }
 
+export interface SummaryData {
+  targetPlayer: string;
+  bestPayout: number;
+  bestSource: string; // "overall" | class label | "none"
+  bestClassPrizeLabel: string | null;
+  targetWish: string | null; // "win" | "draw" | "win or draw" | etc, null if no preference
+  otherBoardNeeds: string[]; // phrases like "Alice beats Bob"
+  classCompetitionNeeds: string[]; // phrases about eliminating class competitors
+  outcomeStats: {
+    outcome: "Win" | "Draw" | "Lose";
+    totalScenarios: number;
+    avgPayout: number;
+    minPayout: number;
+    maxPayout: number;
+  }[];
+  totalScenarios: number;
+  criticalBoards: number;
+  trivialBoards: number;
+}
+
 export interface CalcResult {
   totalBoards: number;
   criticalBoards: number;
@@ -44,6 +64,7 @@ export interface CalcResult {
   outcomes: OutcomeResult[];
   bestPayout: number;
   bestSummary: string;
+  summaryData: SummaryData;
 }
 
 function getCleanBins(absMin: number, absMax: number): [number, number][] {
