@@ -84,6 +84,7 @@ function Index() {
   const [pairings, setPairings] = useState<Pairing[]>([]);
   const [result, setResult] = useState<CalcResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [calcBusy, setCalcBusy] = useState(false);
 
   const onFile = async (f: File | null) => {
     setImageFile(f);
