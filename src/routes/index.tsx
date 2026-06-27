@@ -121,7 +121,8 @@ function Index() {
       .filter((n) => !Number.isNaN(n) && n > 0);
     if (!prizeArr.length) return toast.error("Enter at least one prize.");
     try {
-      const r = calculatePayouts(pairings, targetPlayer.trim(), prizeArr);
+      const classPrizes = parseClassPrizes(classPrizesText);
+      const r = calculatePayouts(pairings, targetPlayer.trim(), prizeArr, classPrizes);
       setResult(r);
     } catch (e: any) {
       toast.error(e?.message ?? "Calculation failed.");
