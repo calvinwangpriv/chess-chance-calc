@@ -166,7 +166,7 @@ function Index() {
               <Trophy className="h-7 w-7" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold tracking-tight bg-clip-text text-transparent"
+              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight bg-clip-text text-transparent"
                   style={{ backgroundImage: "var(--gradient-hero)" }}>
                 Chess Prize Odds
               </h1>
