@@ -182,15 +182,17 @@ function Index() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Label htmlFor="pairing-image">Pairing sheet image</Label>
-            <Input
-              id="pairing-image"
-              type="file"
-              accept="image/*"
-              aria-label="Upload pairing sheet image"
-              onChange={(e) => onFile(e.target.files?.[0] ?? null)}
-              className="cursor-pointer"
-            />
+            <div>
+              <Label htmlFor="pairing-image">Pairing sheet image</Label>
+              <Input
+                id="pairing-image"
+                type="file"
+                accept="image/*"
+                aria-label="Upload pairing sheet image"
+                onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+                className="cursor-pointer mt-1"
+              />
+            </div>
             {imagePreview && (
               <img
                 src={imagePreview}
@@ -202,7 +204,7 @@ function Index() {
               onClick={runExtract}
               disabled={busy || !imageFile}
               className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02]"
-              style={{ background: "var(--gradient-primary)" }}
+              style={{ background: "var(--gradient-hero)" }}
             >
               {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Extract pairings with AI
