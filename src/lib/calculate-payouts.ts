@@ -453,7 +453,7 @@ export function calculatePayouts(
   if (targetWish) {
     sentences.push(`Your best-case payout is $${bestPayout.toLocaleString()}, and it requires you to ${targetWish} your own game.`);
   } else {
-    sentences.push(`Your best-case payout is $${bestPayout.toLocaleString()} regardless of how your own game ends.`);
+    sentences.push(`Your best-case payout is $${bestPayout.toLocaleString()}.`);
   }
 
   if (bestClassPrize) {
