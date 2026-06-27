@@ -157,7 +157,7 @@ function Index() {
     <div className="min-h-screen">
       <Toaster richColors position="top-center" />
       <header className="border-b border-border/60 backdrop-blur-sm bg-card/40">
-        <div className="mx-auto max-w-5xl px-6 py-10">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-10">
           <div className="flex items-center gap-4">
             <div
               className="grid h-14 w-14 place-items-center rounded-2xl text-primary-foreground shadow-[var(--shadow-elegant)]"
