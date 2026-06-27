@@ -302,6 +302,9 @@ export function calculatePayouts(
   let bestPayout = -Infinity;
   const bestMasks: number[] = new Array(n).fill(0);
   const bestSourceDist = new Map<string, number>();
+  // Per-game per-outcome avg target payout tracking (for "slightly in your favor" guidance).
+  const gameOutSum: number[][] = variable.map((_, i) => new Array(radix[i]).fill(0));
+  const gameOutCnt: number[][] = variable.map((_, i) => new Array(radix[i]).fill(0));
   for (let s = 0; s < total; s++) {
     let rem = s;
     for (let i = 0; i < n; i++) {
@@ -326,6 +329,10 @@ export function calculatePayouts(
 
     const m = dist[targetOutcome];
     m.set(targetPayout, (m.get(targetPayout) ?? 0) + 1);
+    for (let i = 0; i < n; i++) {
+      gameOutSum[i][scenario[i]] += targetPayout;
+      gameOutCnt[i][scenario[i]] += 1;
+    }
     if (targetPayout > bestPayout) {
       bestPayout = targetPayout;
       bestSourceDist.clear();
@@ -345,6 +352,7 @@ export function calculatePayouts(
       bestSource = src;
     }
   }
+
 
   const result: OutcomeResult[] = (["Win", "Draw", "Lose"] as const).map((outcome) => {
     const m = dist[outcome];
@@ -461,36 +469,63 @@ export function calculatePayouts(
   }
 
   // Class-prize specific rooting guidance.
+  // Trigger whenever knocking down a same-class competitor improves the target's
+  // EXPECTED payout (even slightly) — not just in the single best-case scenario.
   const classPhrases: string[] = [];
-  if (bestClassPrize) {
+  const targetRating = ratings[targetPlayer] ?? null;
+  const targetClasses = classPrizes.filter((cp) => classEligible(targetRating, cp));
+  const seenClassPhrase = new Set<string>();
+  const EPS = Math.max(1, bestPayout * 0.005); // ~0.5% of best payout, or $1 min
+
+  for (const cp of targetClasses) {
     for (let i = 0; i < n; i++) {
-      if (radix[i] === 1) continue;
+      if (radix[i] !== 3) continue; // only ongoing 3-way games
       const game = variable[i];
       const [w, b] = game;
-      const mask = bestMasks[i];
-      if (mask === 0b111) continue;
       if (w[0] === targetPlayer || b[0] === targetPlayer) continue;
 
-      const wElig = classEligible(w[2], bestClassPrize);
-      const bElig = classEligible(b[2], bestClassPrize);
-      if (!wElig && !bElig) continue;
+      const avg = gameOutCnt[i].map((c, o) => (c ? gameOutSum[i][o] / c : 0));
+      // outcome index ordering from resultToOutcomes(null): 0=W wins, 1=draw, 2=B wins
 
-      if (wElig && mask === 0b100) {
-        classPhrases.push(`${w[0]} loses to ${b[0]}`);
-      } else if (wElig && !(mask & 0b001)) {
-        classPhrases.push(`${w[0]} doesn't beat ${b[0]}`);
-      }
+      const considerCompetitor = (compIsWhite: boolean) => {
+        const compName = compIsWhite ? w[0] : b[0];
+        const compRating = compIsWhite ? w[2] : b[2];
+        if (!classEligible(compRating, cp)) return;
 
-      if (bElig && mask === 0b001) {
-        classPhrases.push(`${b[0]} loses to ${w[0]}`);
-      } else if (bElig && !(mask & 0b100)) {
-        classPhrases.push(`${b[0]} doesn't beat ${w[0]}`);
-      }
-    }
-    if (classPhrases.length) {
-      sentences.push(`For the ${bestClassPrize.label} prize, you want ${classPhrases.join("; ")} to eliminate competition.`);
+        const winO = compIsWhite ? 0 : 2;
+        const drawO = 1;
+        const loseO = compIsWhite ? 2 : 0;
+        const oppName = compIsWhite ? b[0] : w[0];
+
+        const winAvg = avg[winO];
+        const drawAvg = avg[drawO];
+        const loseAvg = avg[loseO];
+
+        let phrase: string | null = null;
+        if (loseAvg - winAvg > EPS && loseAvg - drawAvg > EPS) {
+          phrase = `${compName} loses to ${oppName}`;
+        } else if (Math.min(loseAvg, drawAvg) - winAvg > EPS) {
+          phrase = `${compName} doesn't beat ${oppName}`;
+        }
+        if (!phrase) return;
+        const key = `${cp.label}::${phrase}`;
+        if (seenClassPhrase.has(key)) return;
+        seenClassPhrase.add(key);
+        classPhrases.push(`${phrase} (${cp.label})`);
+      };
+
+      considerCompetitor(true);
+      considerCompetitor(false);
     }
   }
+
+  if (classPhrases.length) {
+    const list = classPhrases.length <= 4
+      ? classPhrases.join("; ")
+      : `${classPhrases.slice(0, 3).join("; ")}; and ${classPhrases.length - 3} more`;
+    sentences.push(`To boost your subsection prize odds, you'd also like: ${list}.`);
+  }
+
 
   const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`;
   const parts: string[] = [];

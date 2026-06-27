@@ -11,7 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Loader2, Upload, Trophy, Calculator, Sparkles, Crown } from "lucide-react";
 import { extractPairings, type Pairing, type GameResult } from "@/lib/extract-pairings.functions";
 import { calculatePayouts, parseClassPrizes, type CalcResult } from "@/lib/calculate-payouts";
-import { summarizeResult } from "@/lib/summarize-result.functions";
+
 import {
   Select,
   SelectContent,
@@ -84,11 +84,9 @@ function Index() {
   const [targetPlayer, setTargetPlayer] = useState("");
   const [pairings, setPairings] = useState<Pairing[]>([]);
   const [result, setResult] = useState<CalcResult | null>(null);
-  const [aiSummary, setAiSummary] = useState<string | null>(null);
-  const [summaryBusy, setSummaryBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [calcBusy, setCalcBusy] = useState(false);
-  const summarizeFn = useServerFn(summarizeResult);
+
 
   const onFile = async (f: File | null) => {
     setImageFile(f);
@@ -126,21 +124,13 @@ function Index() {
       .filter((n) => !Number.isNaN(n) && n > 0);
     if (!prizeArr.length) return toast.error("Enter at least one prize.");
     setCalcBusy(true);
-    setAiSummary(null);
     try {
       // Yield to the browser so the spinner can paint before the heavy sync loop.
       await new Promise((r) => setTimeout(r, 30));
       const classPrizes = parseClassPrizes(classPrizesText);
       const r = calculatePayouts(pairings, targetPlayer.trim(), prizeArr, classPrizes);
       setResult(r);
-      // Kick off LLM summary in the background; fall back silently to r.bestSummary on failure.
-      setSummaryBusy(true);
-      summarizeFn({ data: { data: r.summaryData } })
-        .then(({ summary }) => setAiSummary(summary))
-        .catch(() => {
-          /* fallback to hardcoded bestSummary */
-        })
-        .finally(() => setSummaryBusy(false));
+
     } catch (e: any) {
       toast.error(e?.message ?? "Calculation failed.");
     } finally {
@@ -419,11 +409,11 @@ function Index() {
               >
                 <Crown className="h-5 w-5 text-accent shrink-0 mt-0.5" />
                 <div>
-                  <div className="text-xs uppercase tracking-wider font-semibold text-accent-foreground/80 mb-1 flex items-center gap-2">
+                  <div className="text-xs uppercase tracking-wider font-semibold text-accent-foreground/80 mb-1">
                     What you're rooting for
-                    {summaryBusy && <Loader2 className="h-3 w-3 animate-spin" />}
                   </div>
-                  <p className="text-sm leading-relaxed">{aiSummary ?? result.bestSummary}</p>
+                  <p className="text-sm leading-relaxed">{result.bestSummary}</p>
+
                 </div>
               </div>
 
