@@ -238,8 +238,10 @@ function Index() {
                     <tr className="border-b border-border/60 text-left text-muted-foreground bg-muted/40">
                       <th className="px-2 py-2 w-8">#</th>
                       <th className="px-2 py-2">White</th>
+                      <th className="px-2 py-2 w-20">Rating</th>
                       <th className="px-2 py-2 w-20">Score</th>
                       <th className="px-2 py-2">Black</th>
+                      <th className="px-2 py-2 w-20">Rating</th>
                       <th className="px-2 py-2 w-20">Score</th>
                       <th className="px-2 py-2 w-32">Result</th>
                     </tr>
@@ -257,6 +259,14 @@ function Index() {
                         </td>
                         <td className="px-2 py-1">
                           <Input
+                            aria-label={`Board ${i + 1} white rating`}
+                            type="number"
+                            value={p[0][2] ?? ""}
+                            onChange={(e) => updatePairing(i, "wr", e.target.value)}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <Input
                             aria-label={`Board ${i + 1} white score`}
                             type="number"
                             step="0.5"
@@ -269,6 +279,14 @@ function Index() {
                             aria-label={`Board ${i + 1} black player name`}
                             value={p[1][0]}
                             onChange={(e) => updatePairing(i, "bn", e.target.value)}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <Input
+                            aria-label={`Board ${i + 1} black rating`}
+                            type="number"
+                            value={p[1][2] ?? ""}
+                            onChange={(e) => updatePairing(i, "br", e.target.value)}
                           />
                         </td>
                         <td className="px-2 py-1">
