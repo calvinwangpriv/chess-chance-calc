@@ -129,6 +129,8 @@ export function calculatePayouts(
 
   const n = variable.length;
   const scenario = new Array<number>(n).fill(0);
+  let bestPayout = -Infinity;
+  const bestMasks: number[] = new Array(n).fill(0);
   for (let s = 0; s < total; s++) {
     let rem = s;
     for (let i = 0; i < n; i++) {
@@ -171,6 +173,12 @@ export function calculatePayouts(
     }
     const m = dist[targetOutcome];
     m.set(targetPayout, (m.get(targetPayout) ?? 0) + 1);
+    if (targetPayout > bestPayout) {
+      bestPayout = targetPayout;
+      for (let i = 0; i < n; i++) bestMasks[i] = 1 << scenario[i];
+    } else if (targetPayout === bestPayout) {
+      for (let i = 0; i < n; i++) bestMasks[i] |= 1 << scenario[i];
+    }
   }
 
   const result: OutcomeResult[] = (["Win", "Draw", "Lose"] as const).map((outcome) => {
