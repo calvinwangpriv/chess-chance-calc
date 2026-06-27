@@ -297,7 +297,7 @@ export function calculatePayouts(
       }
     }
 
-    const targetPayout = allocateTargetPayout(finalScores, ratings, prizeSlots, targetPlayer);
+    const targetPayout = allocateTargetPayout(finalScores, ratings, prizes, classPrizes, targetPlayer);
 
     const m = dist[targetOutcome];
     m.set(targetPayout, (m.get(targetPayout) ?? 0) + 1);
