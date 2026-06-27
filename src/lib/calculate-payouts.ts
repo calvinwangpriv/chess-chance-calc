@@ -16,6 +16,7 @@ export interface OutcomeBin {
   start: number;
   end: number;
   percent: number;
+  count: number;
 }
 
 export interface OutcomeResult {
@@ -31,6 +32,8 @@ export interface CalcResult {
   trivialBoards: number;
   targetStartScore: number;
   outcomes: OutcomeResult[];
+  bestPayout: number;
+  bestSummary: string;
 }
 
 function getCleanBins(absMin: number, absMax: number): [number, number][] {
@@ -126,6 +129,8 @@ export function calculatePayouts(
 
   const n = variable.length;
   const scenario = new Array<number>(n).fill(0);
+  let bestPayout = -Infinity;
+  const bestMasks: number[] = new Array(n).fill(0);
   for (let s = 0; s < total; s++) {
     let rem = s;
     for (let i = 0; i < n; i++) {
@@ -168,6 +173,12 @@ export function calculatePayouts(
     }
     const m = dist[targetOutcome];
     m.set(targetPayout, (m.get(targetPayout) ?? 0) + 1);
+    if (targetPayout > bestPayout) {
+      bestPayout = targetPayout;
+      for (let i = 0; i < n; i++) bestMasks[i] = 1 << scenario[i];
+    } else if (targetPayout === bestPayout) {
+      for (let i = 0; i < n; i++) bestMasks[i] |= 1 << scenario[i];
+    }
   }
 
   const result: OutcomeResult[] = (["Win", "Draw", "Lose"] as const).map((outcome) => {
@@ -211,9 +222,46 @@ export function calculatePayouts(
       start,
       end,
       percent: (quad[i] / totalScenarios) * 100,
+      count: quad[i],
     }));
     return { outcome, bins, totalScenarios };
   });
+
+  // Build a plain-language summary of which board results lead to the
+  // best possible payout for the target player.
+  const phrases: string[] = [];
+  for (let i = 0; i < n; i++) {
+    if (radix[i] === 1) continue; // finished game, nothing to wish for
+    const game = variable[i];
+    const [wName] = game[0];
+    const [bName] = game[1];
+    const mask = bestMasks[i];
+    // bit 0 = white wins, bit 1 = draw, bit 2 = black wins
+    if (mask === 0b111) continue; // any result works
+    const isTarget = wName === targetPlayer || bName === targetPlayer;
+    if (isTarget) {
+      const targetIsWhite = wName === targetPlayer;
+      const winBit = targetIsWhite ? 0b001 : 0b100;
+      const loseBit = targetIsWhite ? 0b100 : 0b001;
+      const wants: string[] = [];
+      if (mask & winBit) wants.push("win");
+      if (mask & 0b010) wants.push("draw");
+      if (mask & loseBit) wants.push("lose");
+      phrases.push(`you need to ${wants.join(" or ")}`);
+    } else {
+      switch (mask) {
+        case 0b001: phrases.push(`${wName} must beat ${bName}`); break;
+        case 0b100: phrases.push(`${bName} must beat ${wName}`); break;
+        case 0b010: phrases.push(`${wName} and ${bName} must draw`); break;
+        case 0b011: phrases.push(`${wName} must not lose to ${bName}`); break;
+        case 0b110: phrases.push(`${bName} must not lose to ${wName}`); break;
+        case 0b101: phrases.push(`${wName} vs ${bName} must not be a draw`); break;
+      }
+    }
+  }
+  const bestSummary = phrases.length === 0
+    ? `Your top payout of $${bestPayout} is locked in regardless of any remaining results.`
+    : `To get your top payout of $${bestPayout}, ${phrases.join("; ")}.`;
 
   return {
     totalBoards: pairings.length,
@@ -221,5 +269,7 @@ export function calculatePayouts(
     trivialBoards: trivialCount,
     targetStartScore,
     outcomes: result,
+    bestPayout: bestPayout === -Infinity ? 0 : bestPayout,
+    bestSummary,
   };
 }

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { Loader2, Upload, Trophy, Calculator } from "lucide-react";
+import { Loader2, Upload, Trophy, Calculator, Sparkles, Crown } from "lucide-react";
 import { extractPairings, type Pairing, type GameResult } from "@/lib/extract-pairings.functions";
 import { calculatePayouts, type CalcResult } from "@/lib/calculate-payouts";
 import {
@@ -49,6 +49,30 @@ function fileToDataUrl(file: File): Promise<string> {
     r.readAsDataURL(file);
   });
 }
+
+const outcomeStyles: Record<
+  "Win" | "Draw" | "Lose",
+  { ring: string; chip: string; bar: string; icon: string }
+> = {
+  Win: {
+    ring: "ring-success/30",
+    chip: "bg-success/15 text-success border border-success/30",
+    bar: "bg-gradient-to-r from-success to-primary-glow",
+    icon: "🏆",
+  },
+  Draw: {
+    ring: "ring-warning/30",
+    chip: "bg-warning/20 text-accent-foreground border border-warning/40",
+    bar: "bg-gradient-to-r from-warning to-accent-glow",
+    icon: "🤝",
+  },
+  Lose: {
+    ring: "ring-destructive/30",
+    chip: "bg-destructive/15 text-destructive border border-destructive/30",
+    bar: "bg-gradient-to-r from-destructive to-warning",
+    icon: "💀",
+  },
+};
 
 function Index() {
   const extract = useServerFn(extractPairings);
@@ -122,27 +146,38 @@ function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Toaster richColors position="top-center" />
-      <header className="border-b">
-        <div className="mx-auto max-w-5xl px-6 py-8">
-          <div className="flex items-center gap-3">
-            <Trophy className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold tracking-tight">Chess Prize Odds</h1>
+      <header className="border-b border-border/60 backdrop-blur-sm bg-card/40">
+        <div className="mx-auto max-w-5xl px-6 py-10">
+          <div className="flex items-center gap-4">
+            <div
+              className="grid h-14 w-14 place-items-center rounded-2xl text-primary-foreground shadow-[var(--shadow-elegant)]"
+              style={{ background: "var(--gradient-hero)" }}
+            >
+              <Trophy className="h-7 w-7" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight bg-clip-text text-transparent"
+                  style={{ backgroundImage: "var(--gradient-hero)" }}>
+                Chess Prize Odds
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Upload a SwissSys pairing sheet · enter the prize list · see exactly what you stand to win.
+              </p>
+            </div>
           </div>
-          <p className="mt-2 text-muted-foreground">
-            Upload a SwissSys final-round pairing sheet, enter the prize list and your name, and
-            see your expected winnings if you win, draw, or lose.
-          </p>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8 space-y-6">
-        <Card>
+      <main className="mx-auto max-w-5xl px-6 py-10 space-y-6">
+        <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
+          <div className="h-1" style={{ background: "var(--gradient-primary)" }} />
           <CardHeader>
             <CardTitle className="text-lg">
               <h2 className="flex items-center gap-2">
-                <Upload className="h-5 w-5" /> 1. Upload pairing sheet
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-sm font-bold">1</span>
+                <Upload className="h-5 w-5 text-primary" /> Upload pairing sheet
               </h2>
             </CardTitle>
           </CardHeader>
@@ -154,33 +189,43 @@ function Index() {
               accept="image/*"
               aria-label="Upload pairing sheet image"
               onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+              className="cursor-pointer"
             />
             {imagePreview && (
               <img
                 src={imagePreview}
                 alt="Pairing preview"
-                className="max-h-64 rounded border object-contain"
+                className="max-h-64 rounded-lg border border-border/60 object-contain shadow-[var(--shadow-soft)]"
               />
             )}
-            <Button onClick={runExtract} disabled={busy || !imageFile}>
-              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            <Button
+              onClick={runExtract}
+              disabled={busy || !imageFile}
+              className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02]"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Extract pairings with AI
             </Button>
           </CardContent>
         </Card>
 
         {pairings.length > 0 && (
-          <Card>
+          <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
+            <div className="h-1" style={{ background: "var(--gradient-accent)" }} />
             <CardHeader>
               <CardTitle className="text-lg">
-                <h2>2. Verify extracted pairings ({pairings.length})</h2>
+                <h2 className="flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-accent/30 text-accent-foreground text-sm font-bold">2</span>
+                  Verify extracted pairings ({pairings.length})
+                </h2>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-lg border border-border/60">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b text-left text-muted-foreground">
+                    <tr className="border-b border-border/60 text-left text-muted-foreground bg-muted/40">
                       <th className="px-2 py-2 w-8">#</th>
                       <th className="px-2 py-2">White</th>
                       <th className="px-2 py-2 w-20">Score</th>
@@ -191,8 +236,8 @@ function Index() {
                   </thead>
                   <tbody>
                     {pairings.map((p, i) => (
-                      <tr key={i} className="border-b">
-                        <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
+                      <tr key={i} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                        <td className="px-2 py-1 text-muted-foreground tabular-nums">{i + 1}</td>
                         <td className="px-2 py-1">
                           <Input
                             aria-label={`Board ${i + 1} white player name`}
@@ -251,9 +296,15 @@ function Index() {
         )}
 
         {pairings.length > 0 && (
-          <Card>
+          <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
+            <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
             <CardHeader>
-              <CardTitle className="text-lg"><h2>3. Prize list &amp; your name</h2></CardTitle>
+              <CardTitle className="text-lg">
+                <h2 className="flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-sm font-bold">3</span>
+                  Prize list &amp; your name
+                </h2>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -262,7 +313,7 @@ function Index() {
                   id="prizes"
                   value={prizes}
                   onChange={(e) => setPrizes(e.target.value)}
-                  placeholder="1800, 900, 500, 300, 200, 150, 100, 75, 50, 25"
+                  placeholder="12000, 6000, 3000, 1500, 1000, 800, 600, 500, 400, 400"
                   className="mt-1"
                 />
               </div>
@@ -276,7 +327,12 @@ function Index() {
                   autoComplete="off"
                 />
               </div>
-              <Button onClick={runCalc} disabled={!pairings.length}>
+              <Button
+                onClick={runCalc}
+                disabled={!pairings.length}
+                className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02]"
+                style={{ background: "var(--gradient-hero)" }}
+              >
                 <Calculator className="mr-2 h-4 w-4" />
                 Calculate odds
               </Button>
@@ -285,52 +341,91 @@ function Index() {
         )}
 
         {result && (
-          <Card>
+          <Card className="border-border/60 shadow-[var(--shadow-elegant)] overflow-hidden">
+            <div className="h-1.5" style={{ background: "var(--gradient-hero)" }} />
             <CardHeader>
-              <CardTitle className="text-lg"><h2>Results</h2></CardTitle>
+              <CardTitle className="text-lg">
+                <h2 className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-accent" />
+                  Results
+                </h2>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <p className="text-sm text-muted-foreground">
-                {result.totalBoards} total boards · {result.criticalBoards} simulated ·{" "}
-                {result.trivialBoards} bypassed · your start score: {result.targetStartScore}
-              </p>
-              {result.outcomes.map((o) => (
-                <div key={o.outcome} className="space-y-2">
-                  <h2 className="font-semibold text-base">
-                    If I {o.outcome.toLowerCase()}:
-                  </h2>
-                  {o.totalScenarios === 0 ? (
-                    <p className="text-sm text-muted-foreground">No scenarios.</p>
-                  ) : o.exactPayout !== undefined ? (
-                    <p className="text-sm">
-                      100% chance of exactly{" "}
-                      <span className="font-semibold">${o.exactPayout}</span>
-                    </p>
-                  ) : (
-                    <div className="space-y-1">
-                      {[...o.bins].reverse().map((b, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-3 text-sm"
-                        >
-                          <div className="w-16 text-right tabular-nums font-medium">
-                            {b.percent.toFixed(1)}%
-                          </div>
-                          <div className="flex-1 h-2 bg-muted rounded overflow-hidden">
-                            <div
-                              className="h-full bg-primary"
-                              style={{ width: `${b.percent}%` }}
-                            />
-                          </div>
-                          <div className="w-32 text-muted-foreground tabular-nums">
-                            ${b.start} – ${b.end}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="rounded-full bg-muted px-3 py-1 tabular-nums">
+                  {result.totalBoards} boards
+                </span>
+                <span className="rounded-full bg-primary/10 text-primary px-3 py-1 tabular-nums">
+                  {result.criticalBoards} simulated
+                </span>
+                <span className="rounded-full bg-accent/20 text-accent-foreground px-3 py-1 tabular-nums">
+                  {result.trivialBoards} bypassed
+                </span>
+                <span className="rounded-full bg-secondary text-secondary-foreground px-3 py-1 tabular-nums">
+                  start score: {result.targetStartScore}
+                </span>
+              </div>
+
+              <div
+                className="rounded-xl border border-accent/40 p-4 flex gap-3 items-start"
+                style={{ background: "color-mix(in oklab, var(--accent) 12%, var(--card))" }}
+              >
+                <Crown className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-xs uppercase tracking-wider font-semibold text-accent-foreground/80 mb-1">
+                    What you're rooting for
+                  </div>
+                  <p className="text-sm leading-relaxed">{result.bestSummary}</p>
                 </div>
-              ))}
+              </div>
+
+              {result.outcomes.map((o) => {
+                const s = outcomeStyles[o.outcome];
+                return (
+                  <div key={o.outcome} className={`rounded-xl border border-border/60 p-4 ring-1 ${s.ring} bg-card`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="font-semibold text-base flex items-center gap-2">
+                        <span className="text-xl">{s.icon}</span>
+                        If you {o.outcome.toLowerCase()}:
+                      </h2>
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium tabular-nums ${s.chip}`}>
+                        {o.totalScenarios.toLocaleString()} scenarios
+                      </span>
+                    </div>
+                    {o.totalScenarios === 0 ? (
+                      <p className="text-sm text-muted-foreground">No scenarios.</p>
+                    ) : o.exactPayout !== undefined ? (
+                      <p className="text-sm">
+                        100% chance of exactly{" "}
+                        <span className="font-semibold text-primary">${o.exactPayout}</span>
+                      </p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {[...o.bins].reverse().map((b, idx) => (
+                          <div key={idx} className="flex items-center gap-3 text-sm">
+                            <div className="w-16 text-right tabular-nums font-semibold">
+                              {b.percent.toFixed(1)}%
+                            </div>
+                            <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${s.bar}`}
+                                style={{ width: `${b.percent}%` }}
+                              />
+                            </div>
+                            <div className="w-44 text-right text-muted-foreground tabular-nums text-xs">
+                              <span className="font-medium text-foreground">${b.start}–${b.end}</span>
+                              <span className="ml-2 opacity-70">
+                                ({b.count.toLocaleString()}/{o.totalScenarios.toLocaleString()})
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         )}
