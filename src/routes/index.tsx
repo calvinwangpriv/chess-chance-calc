@@ -354,20 +354,6 @@ function Index() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full bg-muted px-3 py-1 tabular-nums">
-                  {result.totalBoards} boards
-                </span>
-                <span className="rounded-full bg-primary/10 text-primary px-3 py-1 tabular-nums">
-                  {result.criticalBoards} simulated
-                </span>
-                <span className="rounded-full bg-accent/20 text-accent-foreground px-3 py-1 tabular-nums">
-                  {result.trivialBoards} bypassed
-                </span>
-                <span className="rounded-full bg-secondary text-secondary-foreground px-3 py-1 tabular-nums">
-                  start score: {result.targetStartScore}
-                </span>
-              </div>
 
               <div
                 className="rounded-xl border border-accent/40 p-4 flex gap-3 items-start"
