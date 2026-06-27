@@ -461,8 +461,8 @@ export function calculatePayouts(
   }
 
   // Class-prize specific rooting guidance.
+  const classPhrases: string[] = [];
   if (bestClassPrize) {
-    const classPhrases: string[] = [];
     for (let i = 0; i < n; i++) {
       if (radix[i] === 1) continue;
       const game = variable[i];
@@ -503,6 +503,26 @@ export function calculatePayouts(
   }
   const bestSummary = sentences.join(" ");
 
+  const summaryData: SummaryData = {
+    targetPlayer,
+    bestPayout: bestPayout === -Infinity ? 0 : bestPayout,
+    bestSource,
+    bestClassPrizeLabel: bestClassPrize?.label ?? null,
+    targetWish,
+    otherBoardNeeds: phrases,
+    classCompetitionNeeds: classPhrases,
+    outcomeStats: outcomeStats.map((s) => ({
+      outcome: s.outcome,
+      totalScenarios: s.total,
+      avgPayout: s.avg,
+      minPayout: s.min,
+      maxPayout: s.max,
+    })),
+    totalScenarios: total,
+    criticalBoards: variable.length,
+    trivialBoards: trivialCount,
+  };
+
   return {
     totalBoards: pairings.length,
     criticalBoards: variable.length,
@@ -511,6 +531,7 @@ export function calculatePayouts(
     outcomes: result,
     bestPayout: bestPayout === -Infinity ? 0 : bestPayout,
     bestSummary,
+    summaryData,
   };
 }
 
