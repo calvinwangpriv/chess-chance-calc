@@ -214,25 +214,8 @@ export function calculatePayouts(
     ratings[b[0]] = b[2];
   }
 
-  // Build full prize slot list.
-  const prizeSlots: PrizeSlot[] = [];
-  prizes.forEach((amt, i) =>
-    prizeSlots.push({ label: `${ordinal(i + 1)} overall`, amount: amt, eligible: null }),
-  );
-  for (const cp of classPrizes) {
-    cp.amounts.forEach((amt, i) =>
-      prizeSlots.push({
-        label: `${ordinal(i + 1)} ${cp.label}`,
-        amount: amt,
-        eligible: (r) => {
-          if (r === null) return false; // unrated not eligible for class prizes
-          if (cp.minRating !== null && r < cp.minRating) return false;
-          if (cp.maxRating !== null && r > cp.maxRating) return false;
-          return true;
-        },
-      }),
-    );
-  }
+  // (prize slot list no longer needed — allocator takes overall + class lists directly)
+
 
   const baseline: Record<string, number> = {};
   const variable: Pairing[] = [];
