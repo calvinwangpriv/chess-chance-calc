@@ -113,7 +113,8 @@ function Index() {
   const runCalc = () => {
     if (!pairings.length) return toast.error("Extract pairings first.");
     if (!targetPlayer.trim()) return toast.error("Enter your player name.");
-    const prizeArr = prizes
+    const prizeSource = prizes.trim() || "12000, 6000, 3000, 1500, 1000, 800, 600, 500, 400, 400";
+    const prizeArr = prizeSource
       .split(/[,\n]/)
       .map((s) => Number(s.trim().replace(/[^\d.]/g, "")))
       .filter((n) => !Number.isNaN(n) && n > 0);
