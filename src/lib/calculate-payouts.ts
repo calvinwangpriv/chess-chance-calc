@@ -543,7 +543,7 @@ export function parseClassPrizes(text: string): ClassPrize[] {
     let maxRating: number | null = null;
     const lower = label.toLowerCase();
 
-    const under = lower.match(/under\s*(\d+)/) || lower.match(/^u\s*(\d+)/);
+    const under = lower.match(/u(?:nder)?\s*(\d+)/);
     const range = lower.match(/(\d{3,4})\s*[-–]\s*(\d{3,4})/);
     if (range) {
       minRating = Number(range[1]);
