@@ -126,12 +126,21 @@ function Index() {
       .filter((n) => !Number.isNaN(n) && n > 0);
     if (!prizeArr.length) return toast.error("Enter at least one prize.");
     setCalcBusy(true);
+    setAiSummary(null);
     try {
       // Yield to the browser so the spinner can paint before the heavy sync loop.
       await new Promise((r) => setTimeout(r, 30));
       const classPrizes = parseClassPrizes(classPrizesText);
       const r = calculatePayouts(pairings, targetPlayer.trim(), prizeArr, classPrizes);
       setResult(r);
+      // Kick off LLM summary in the background; fall back silently to r.bestSummary on failure.
+      setSummaryBusy(true);
+      summarizeFn({ data: { data: r.summaryData } })
+        .then(({ summary }) => setAiSummary(summary))
+        .catch(() => {
+          /* fallback to hardcoded bestSummary */
+        })
+        .finally(() => setSummaryBusy(false));
     } catch (e: any) {
       toast.error(e?.message ?? "Calculation failed.");
     } finally {
