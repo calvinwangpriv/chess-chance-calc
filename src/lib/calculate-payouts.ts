@@ -125,7 +125,7 @@ function allocateTargetPayout(
   overallPrizes: number[],
   classPrizes: ClassPrize[],
   targetPlayer: string,
-): number {
+): { payout: number; source: string } {
   const players = Object.keys(finalScores);
   // pick[p] = "overall" | classIndex (as string) | "none"
   let pick: Record<string, string> = {};
@@ -186,10 +186,16 @@ function allocateTargetPayout(
   });
 
   const choice = pick[targetPlayer];
-  if (choice === "overall") return overallShares.get(targetPlayer) ?? 0;
-  if (choice === "none") return 0;
+  if (choice === "overall") {
+    return { payout: overallShares.get(targetPlayer) ?? 0, source: "overall" };
+  }
+  if (choice === "none") return { payout: 0, source: "none" };
   const ci = Number(choice);
-  return finalClassShares[ci]?.get(targetPlayer) ?? 0;
+  const cp = classPrizes[ci];
+  return {
+    payout: finalClassShares[ci]?.get(targetPlayer) ?? 0,
+    source: cp?.label ?? "class",
+  };
 }
 
 export function calculatePayouts(
@@ -274,6 +280,7 @@ export function calculatePayouts(
   const scenario = new Array<number>(n).fill(0);
   let bestPayout = -Infinity;
   const bestMasks: number[] = new Array(n).fill(0);
+  const bestSourceDist = new Map<string, number>();
   for (let s = 0; s < total; s++) {
     let rem = s;
     for (let i = 0; i < n; i++) {
@@ -294,15 +301,27 @@ export function calculatePayouts(
       }
     }
 
-    const targetPayout = allocateTargetPayout(finalScores, ratings, prizes, classPrizes, targetPlayer);
+    const { payout: targetPayout, source: targetSource } = allocateTargetPayout(finalScores, ratings, prizes, classPrizes, targetPlayer);
 
     const m = dist[targetOutcome];
     m.set(targetPayout, (m.get(targetPayout) ?? 0) + 1);
     if (targetPayout > bestPayout) {
       bestPayout = targetPayout;
+      bestSourceDist.clear();
+      bestSourceDist.set(targetSource, 1);
       for (let i = 0; i < n; i++) bestMasks[i] = 1 << scenario[i];
     } else if (targetPayout === bestPayout) {
+      bestSourceDist.set(targetSource, (bestSourceDist.get(targetSource) ?? 0) + 1);
       for (let i = 0; i < n; i++) bestMasks[i] |= 1 << scenario[i];
+    }
+  }
+
+  let bestSource = "none";
+  let bestSourceCount = 0;
+  for (const [src, count] of bestSourceDist.entries()) {
+    if (count > bestSourceCount) {
+      bestSourceCount = count;
+      bestSource = src;
     }
   }
 
@@ -410,6 +429,30 @@ export function calculatePayouts(
   } else {
     sentences.push(`To lock it in you also need ${phrases.length} other board results to break a specific way (e.g. ${phrases.slice(0, 2).join("; ")}; and ${phrases.length - 2} more).`);
   }
+
+  // Class-prize specific rooting guidance.
+  const bestClassPrize = bestSource !== "overall" && bestSource !== "none"
+    ? classPrizes.find((cp) => cp.label === bestSource)
+    : null;
+  if (bestClassPrize) {
+    const classPhrases: string[] = [];
+    for (let i = 0; i < n; i++) {
+      if (radix[i] === 1) continue;
+      const game = variable[i];
+      const [w, b] = game;
+      const mask = bestMasks[i];
+      if (mask === 0b111) continue;
+      if (w[0] === targetPlayer || b[0] === targetPlayer) continue;
+      const wElig = classEligible(w[2], bestClassPrize);
+      const bElig = classEligible(b[2], bestClassPrize);
+      if (wElig && mask === 0b100) classPhrases.push(`${w[0]} loses to ${b[0]}`);
+      else if (bElig && mask === 0b001) classPhrases.push(`${b[0]} loses to ${w[0]}`);
+    }
+    if (classPhrases.length) {
+      sentences.push(`For the ${bestClassPrize.label} prize, you want ${classPhrases.join("; ")} to eliminate competition.`);
+    }
+  }
+
   const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`;
   const parts: string[] = [];
   if (winStat.total) parts.push(`win → avg ${fmt(winStat.avg)} (worst ${fmt(winStat.min)}, best ${fmt(winStat.max)})`);
