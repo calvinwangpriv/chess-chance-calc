@@ -1,5 +1,15 @@
 export type GameResult = "1-0" | "0-1" | "1/2" | null;
-export type Pairing = [[string, number], [string, number], GameResult];
+export type PlayerEntry = [string, number, number | null];
+export type Pairing = [PlayerEntry, PlayerEntry, GameResult];
+
+export interface ClassPrize {
+  label: string;
+  /** Inclusive rating range. null on a bound means open-ended. */
+  minRating: number | null;
+  maxRating: number | null;
+  /** Ordered prize amounts (1st, 2nd, ...) within this class. */
+  amounts: number[];
+}
 
 function resultToOutcomes(r: GameResult): [number, number][] {
   if (r === "1-0") return [[1.0, 0.0]];
@@ -59,10 +69,57 @@ function getCleanBins(absMin: number, absMax: number): [number, number][] {
   return bins;
 }
 
+interface PrizeSlot {
+  label: string;
+  amount: number;
+  /** null predicate = open to anyone (overall prize). */
+  eligible: ((rating: number | null) => boolean) | null;
+}
+
+/**
+ * Allocate prizes (overall + class) USCF-style:
+ * - Each player wins at most one cash prize, the largest they qualify for.
+ * - For each prize (largest first), award to the highest-scoring unpaid
+ *   eligible player; ties at that score split this prize equally.
+ * Returns the cash the target player ends up with.
+ */
+function allocateTargetPayout(
+  finalScores: Record<string, number>,
+  ratings: Record<string, number | null>,
+  prizes: PrizeSlot[],
+  targetPlayer: string,
+): number {
+  const paid = new Set<string>();
+  let targetCash = 0;
+  // Sort all prizes globally by amount desc.
+  const sorted = [...prizes].sort((a, b) => b.amount - a.amount);
+  // Players sorted by score desc (stable).
+  const players = Object.keys(finalScores).sort(
+    (a, b) => finalScores[b] - finalScores[a],
+  );
+  for (const prize of sorted) {
+    const eligibleUnpaid = players.filter((p) => {
+      if (paid.has(p)) return false;
+      if (!prize.eligible) return true;
+      return prize.eligible(ratings[p] ?? null);
+    });
+    if (eligibleUnpaid.length === 0) continue;
+    const topScore = finalScores[eligibleUnpaid[0]];
+    const tied = eligibleUnpaid.filter((p) => finalScores[p] === topScore);
+    const share = prize.amount / tied.length;
+    for (const p of tied) {
+      paid.add(p);
+      if (p === targetPlayer) targetCash += share;
+    }
+  }
+  return targetCash;
+}
+
 export function calculatePayouts(
   pairings: Pairing[],
   targetPlayer: string,
   prizes: number[],
+  classPrizes: ClassPrize[] = [],
 ): CalcResult {
   let targetStartScore: number | null = null;
   for (const [w, b] of pairings) {
@@ -73,6 +130,33 @@ export function calculatePayouts(
     throw new Error(`Player "${targetPlayer}" not found in pairings.`);
   }
 
+  // Collect ratings.
+  const ratings: Record<string, number | null> = {};
+  for (const [w, b] of pairings) {
+    ratings[w[0]] = w[2];
+    ratings[b[0]] = b[2];
+  }
+
+  // Build full prize slot list.
+  const prizeSlots: PrizeSlot[] = [];
+  prizes.forEach((amt, i) =>
+    prizeSlots.push({ label: `${ordinal(i + 1)} overall`, amount: amt, eligible: null }),
+  );
+  for (const cp of classPrizes) {
+    cp.amounts.forEach((amt, i) =>
+      prizeSlots.push({
+        label: `${ordinal(i + 1)} ${cp.label}`,
+        amount: amt,
+        eligible: (r) => {
+          if (r === null) return false; // unrated not eligible for class prizes
+          if (cp.minRating !== null && r < cp.minRating) return false;
+          if (cp.maxRating !== null && r > cp.maxRating) return false;
+          return true;
+        },
+      }),
+    );
+  }
+
   const baseline: Record<string, number> = {};
   const variable: Pairing[] = [];
   let trivialCount = 0;
@@ -81,9 +165,6 @@ export function calculatePayouts(
     const [w, b, res] = game;
     const isTarget = w[0] === targetPlayer || b[0] === targetPlayer;
 
-    // Game already finished — apply the actual result. If it's the target's
-    // game, we still push it into `variable` (with a single outcome) so the
-    // result lands in the right Win/Draw/Lose bucket.
     if (res !== null) {
       const [wOut, bOut] = resultToOutcomes(res)[0];
       if (!isTarget) {
@@ -100,10 +181,15 @@ export function calculatePayouts(
       continue;
     }
 
-    // Ongoing non-target game: skip if it can't possibly affect target's prize.
+    // With class prizes in play, "can't affect target's prize" is harder to
+    // prove safely. Only skip if class prizes empty AND clearly out of range.
     const wMax = w[1] + 1.0;
     const bMax = b[1] + 1.0;
-    if (wMax < targetStartScore && bMax < targetStartScore) {
+    if (
+      classPrizes.length === 0 &&
+      wMax < targetStartScore &&
+      bMax < targetStartScore
+    ) {
       baseline[w[0]] = w[1] + 0.5;
       baseline[b[0]] = b[1] + 0.5;
       trivialCount++;
@@ -150,27 +236,9 @@ export function calculatePayouts(
         targetOutcome = out[1] === 1 ? "Win" : out[1] === 0.5 ? "Draw" : "Lose";
       }
     }
-    const standings = Object.entries(finalScores).sort((a, b) => b[1] - a[1]);
-    let idx = 0;
-    let targetPayout = 0;
-    while (idx < standings.length) {
-      const score = standings[idx][1];
-      const tied: string[] = [standings[idx][0]];
-      let next = idx + 1;
-      while (next < standings.length && standings[next][1] === score) {
-        tied.push(standings[next][0]);
-        next++;
-      }
-      let pool = 0;
-      for (let r = idx; r < idx + tied.length; r++) {
-        if (r < prizes.length) pool += prizes[r];
-      }
-      const share = pool / tied.length;
-      for (const p of tied) {
-        if (p === targetPlayer) targetPayout = share;
-      }
-      idx = next;
-    }
+
+    const targetPayout = allocateTargetPayout(finalScores, ratings, prizeSlots, targetPlayer);
+
     const m = dist[targetOutcome];
     m.set(targetPayout, (m.get(targetPayout) ?? 0) + 1);
     if (targetPayout > bestPayout) {
@@ -227,18 +295,15 @@ export function calculatePayouts(
     return { outcome, bins, totalScenarios };
   });
 
-  // Build a plain-language summary of which board results lead to the
-  // best possible payout for the target player.
   const phrases: string[] = [];
   let targetWish: string | null = null;
   for (let i = 0; i < n; i++) {
-    if (radix[i] === 1) continue; // finished game, nothing to wish for
+    if (radix[i] === 1) continue;
     const game = variable[i];
     const [wName] = game[0];
     const [bName] = game[1];
     const mask = bestMasks[i];
-    // bit 0 = white wins, bit 1 = draw, bit 2 = black wins
-    if (mask === 0b111) continue; // any result works
+    if (mask === 0b111) continue;
     const isTarget = wName === targetPlayer || bName === targetPlayer;
     if (isTarget) {
       const targetIsWhite = wName === targetPlayer;
@@ -261,7 +326,6 @@ export function calculatePayouts(
     }
   }
 
-  // Stats across outcomes for a richer recap.
   const outcomeStats = (["Win", "Draw", "Lose"] as const).map((o) => {
     const m = dist[o];
     const tot = Array.from(m.values()).reduce((a, b) => a + b, 0);
@@ -309,4 +373,72 @@ export function calculatePayouts(
     bestPayout: bestPayout === -Infinity ? 0 : bestPayout,
     bestSummary,
   };
+}
+
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+const CLASS_RANGES: Record<string, [number | null, number | null]> = {
+  "senior master": [2400, null],
+  "master": [2200, 2399],
+  "expert": [2000, 2199],
+  "class a": [1800, 1999],
+  "class b": [1600, 1799],
+  "class c": [1400, 1599],
+  "class d": [1200, 1399],
+  "class e": [1000, 1199],
+  "class f": [800, 999],
+  "class g": [600, 799],
+  "class h": [400, 599],
+  "class i": [200, 399],
+  "class j": [null, 199],
+};
+
+/**
+ * Parse a class-prize block. One class per line:
+ *   "Under 2000: 600, 400, 200"
+ *   "Class A: 500, 300"
+ *   "1600-1799: 400, 200"
+ */
+export function parseClassPrizes(text: string): ClassPrize[] {
+  const out: ClassPrize[] = [];
+  for (const raw of text.split(/\n+/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    const m = line.match(/^(.+?):\s*(.+)$/);
+    if (!m) continue;
+    const label = m[1].trim();
+    const amounts = m[2]
+      .split(/[,\s]+/)
+      .map((s) => Number(s.replace(/[^\d.]/g, "")))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    if (!amounts.length) continue;
+
+    let minRating: number | null = null;
+    let maxRating: number | null = null;
+    const lower = label.toLowerCase();
+
+    const under = lower.match(/under\s*(\d+)/) || lower.match(/^u\s*(\d+)/);
+    const range = lower.match(/(\d{3,4})\s*[-–]\s*(\d{3,4})/);
+    if (range) {
+      minRating = Number(range[1]);
+      maxRating = Number(range[2]);
+    } else if (under) {
+      maxRating = Number(under[1]) - 1;
+    } else {
+      for (const [key, [mn, mx]] of Object.entries(CLASS_RANGES)) {
+        if (lower.includes(key)) {
+          minRating = mn;
+          maxRating = mx;
+          break;
+        }
+      }
+    }
+
+    out.push({ label, minRating, maxRating, amounts });
+  }
+  return out;
 }

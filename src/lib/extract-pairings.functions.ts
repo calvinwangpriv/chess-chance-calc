@@ -6,7 +6,8 @@ const InputSchema = z.object({
 });
 
 export type GameResult = "1-0" | "0-1" | "1/2" | null;
-export type Pairing = [[string, number], [string, number], GameResult];
+export type PlayerEntry = [string, number, number | null];
+export type Pairing = [PlayerEntry, PlayerEntry, GameResult];
 
 export const extractPairings = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
@@ -17,16 +18,16 @@ export const extractPairings = createServerFn({ method: "POST" })
     const systemPrompt = `You are given an image of a chess tournament pairing sheet (SwissSys format).
 Columns: Bd (board), # (white player number), Res (white result), White (name and "(RATING SCORE)"), # (black number), Res (black result), Black (name and "(RATING SCORE)").
 
+In the player cell, the parentheses contain the player's USCF RATING then their SCORE before this round, e.g. "Marcus Chen (1845 4.5)" → rating 1845, score 4.5. If the rating shows "UNR" or is missing, return null for rating.
+
 The "Res" columns show the result of THIS round's game if it has finished:
 - "1" or "1.0" means that side won
 - "0" or "0.0" means that side lost
 - "½" or "0.5" or "1/2" means draw
 - blank/empty means the game is still ongoing (no result yet)
 
-The score in the player's "(RATING SCORE)" is the player's score BEFORE this round.
-
 Return STRICT JSON only (no markdown, no commentary) of shape:
-{"pairings":[{"white":{"name":"...","score":0.0},"black":{"name":"...","score":0.0},"result":"1-0"|"0-1"|"1/2"|null}, ...]}
+{"pairings":[{"white":{"name":"...","score":0.0,"rating":1800},"black":{"name":"...","score":0.0,"rating":1750},"result":"1-0"|"0-1"|"1/2"|null}, ...]}
 
 "result" rules:
 - "1-0" if white's Res is 1 (or black's Res is 0)
@@ -86,9 +87,15 @@ Keep player names exactly as shown including titles ("WCM Lilian Wang") and anno
       return null;
     };
 
+    const normRating = (r: any): number | null => {
+      if (r === null || r === undefined || r === "") return null;
+      const n = Number(String(r).replace(/[^\d]/g, ""));
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+
     const pairings: Pairing[] = (parsed.pairings ?? []).map((p: any) => [
-      [String(p.white?.name ?? "").trim(), Number(p.white?.score ?? 0)],
-      [String(p.black?.name ?? "").trim(), Number(p.black?.score ?? 0)],
+      [String(p.white?.name ?? "").trim(), Number(p.white?.score ?? 0), normRating(p.white?.rating)],
+      [String(p.black?.name ?? "").trim(), Number(p.black?.score ?? 0), normRating(p.black?.rating)],
       normResult(p.result),
     ]);
 

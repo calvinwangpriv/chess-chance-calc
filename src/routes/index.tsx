@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { Loader2, Upload, Trophy, Calculator, Sparkles, Crown } from "lucide-react";
 import { extractPairings, type Pairing, type GameResult } from "@/lib/extract-pairings.functions";
-import { calculatePayouts, type CalcResult } from "@/lib/calculate-payouts";
+import { calculatePayouts, parseClassPrizes, type CalcResult } from "@/lib/calculate-payouts";
 import {
   Select,
   SelectContent,
@@ -79,6 +79,7 @@ function Index() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [prizes, setPrizes] = useState("");
+  const [classPrizesText, setClassPrizesText] = useState("");
   const [targetPlayer, setTargetPlayer] = useState("");
   const [pairings, setPairings] = useState<Pairing[]>([]);
   const [result, setResult] = useState<CalcResult | null>(null);
@@ -120,7 +121,8 @@ function Index() {
       .filter((n) => !Number.isNaN(n) && n > 0);
     if (!prizeArr.length) return toast.error("Enter at least one prize.");
     try {
-      const r = calculatePayouts(pairings, targetPlayer.trim(), prizeArr);
+      const classPrizes = parseClassPrizes(classPrizesText);
+      const r = calculatePayouts(pairings, targetPlayer.trim(), prizeArr, classPrizes);
       setResult(r);
     } catch (e: any) {
       toast.error(e?.message ?? "Calculation failed.");
@@ -129,18 +131,23 @@ function Index() {
 
   const updatePairing = (
     i: number,
-    field: "wn" | "ws" | "bn" | "bs" | "res",
+    field: "wn" | "ws" | "wr" | "bn" | "bs" | "br" | "res",
     value: string,
   ) => {
     setPairings((prev) => {
-      const next = prev.map(
-        (p) => [[...p[0]] as [string, number], [...p[1]] as [string, number], p[2]] as Pairing,
-      );
+      const next: Pairing[] = prev.map((p) => [
+        [p[0][0], p[0][1], p[0][2]],
+        [p[1][0], p[1][1], p[1][2]],
+        p[2],
+      ]);
       const g = next[i];
+      const ratingVal = value.trim() === "" ? null : Number(value);
       if (field === "wn") g[0][0] = value;
       else if (field === "ws") g[0][1] = Number(value);
+      else if (field === "wr") g[0][2] = ratingVal;
       else if (field === "bn") g[1][0] = value;
       else if (field === "bs") g[1][1] = Number(value);
+      else if (field === "br") g[1][2] = ratingVal;
       else g[2] = (value === "none" ? null : (value as GameResult));
       return next;
     });
@@ -219,7 +226,7 @@ function Index() {
             <CardHeader>
               <CardTitle className="text-lg">
                 <h2 className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-accent/30 text-accent-foreground text-sm font-bold">2</span>
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-sm font-bold">2</span>
                   Verify extracted pairings ({pairings.length})
                 </h2>
               </CardTitle>
@@ -231,8 +238,10 @@ function Index() {
                     <tr className="border-b border-border/60 text-left text-muted-foreground bg-muted/40">
                       <th className="px-2 py-2 w-8">#</th>
                       <th className="px-2 py-2">White</th>
+                      <th className="px-2 py-2 w-20">Rating</th>
                       <th className="px-2 py-2 w-20">Score</th>
                       <th className="px-2 py-2">Black</th>
+                      <th className="px-2 py-2 w-20">Rating</th>
                       <th className="px-2 py-2 w-20">Score</th>
                       <th className="px-2 py-2 w-32">Result</th>
                     </tr>
@@ -250,6 +259,14 @@ function Index() {
                         </td>
                         <td className="px-2 py-1">
                           <Input
+                            aria-label={`Board ${i + 1} white rating`}
+                            type="number"
+                            value={p[0][2] ?? ""}
+                            onChange={(e) => updatePairing(i, "wr", e.target.value)}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <Input
                             aria-label={`Board ${i + 1} white score`}
                             type="number"
                             step="0.5"
@@ -262,6 +279,14 @@ function Index() {
                             aria-label={`Board ${i + 1} black player name`}
                             value={p[1][0]}
                             onChange={(e) => updatePairing(i, "bn", e.target.value)}
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <Input
+                            aria-label={`Board ${i + 1} black rating`}
+                            type="number"
+                            value={p[1][2] ?? ""}
+                            onChange={(e) => updatePairing(i, "br", e.target.value)}
                           />
                         </td>
                         <td className="px-2 py-1">
@@ -321,7 +346,24 @@ function Index() {
                 />
               </div>
               <div>
-                <Label htmlFor="player">Your name (exactly as it appears in the pairings)</Label>
+                <Label htmlFor="class-prizes">
+                  Class / under prizes (optional) — one per line
+                </Label>
+                <Textarea
+                  id="class-prizes"
+                  value={classPrizesText}
+                  onChange={(e) => setClassPrizesText(e.target.value)}
+                  placeholder={"Under 2000: 600, 400, 200\nUnder 1800: 500, 300\nClass A: 400"}
+                  className="mt-1 font-mono text-sm"
+                  rows={4}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Supports "Under 2000", "U1800", "Class A", or "1600-1799".
+                  Each player wins only the largest prize they qualify for; ties at a score split that prize.
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="player">Your name</Label>
                 <Input
                   id="player"
                   value={targetPlayer}
