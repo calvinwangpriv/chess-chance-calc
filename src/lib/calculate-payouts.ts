@@ -16,6 +16,7 @@ export interface OutcomeBin {
   start: number;
   end: number;
   percent: number;
+  count: number;
 }
 
 export interface OutcomeResult {
@@ -31,6 +32,8 @@ export interface CalcResult {
   trivialBoards: number;
   targetStartScore: number;
   outcomes: OutcomeResult[];
+  bestPayout: number;
+  bestSummary: string;
 }
 
 function getCleanBins(absMin: number, absMax: number): [number, number][] {
