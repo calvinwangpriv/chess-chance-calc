@@ -446,11 +446,11 @@ function Index() {
                                 style={{ width: `${b.percent}%` }}
                               />
                             </div>
-                            <div className="w-44 text-right text-muted-foreground tabular-nums text-xs">
-                              <span className="font-medium text-foreground">${b.start}–${b.end}</span>
-                              <span className="ml-2 opacity-70">
-                                ({b.count.toLocaleString()}/{o.totalScenarios.toLocaleString()})
-                              </span>
+                            <div className="w-28 text-right tabular-nums font-medium text-foreground">
+                              ${b.start}–${b.end}
+                            </div>
+                            <div className="w-24 text-right text-muted-foreground tabular-nums text-xs opacity-70">
+                              ({b.count.toLocaleString()}/{o.totalScenarios.toLocaleString()})
                             </div>
                           </div>
                         ))}
