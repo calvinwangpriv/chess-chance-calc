@@ -69,50 +69,127 @@ function getCleanBins(absMin: number, absMax: number): [number, number][] {
   return bins;
 }
 
-interface PrizeSlot {
-  label: string;
-  amount: number;
-  /** null predicate = open to anyone (overall prize). */
-  eligible: ((rating: number | null) => boolean) | null;
+/**
+ * Pool prizes among tied players within a single ranked prize list.
+ * Walk players in descending score order; each score group collectively
+ * claims the next group.length prizes from the top of the remaining list
+ * and splits the sum equally. (USCF tie-pooling.)
+ */
+function poolShares(
+  eligible: string[],
+  prizeAmounts: number[],
+  finalScores: Record<string, number>,
+): Map<string, number> {
+  const shares = new Map<string, number>();
+  if (prizeAmounts.length === 0 || eligible.length === 0) return shares;
+  const sorted = [...eligible].sort(
+    (a, b) => finalScores[b] - finalScores[a],
+  );
+  let i = 0;
+  let pIdx = 0;
+  while (i < sorted.length && pIdx < prizeAmounts.length) {
+    const score = finalScores[sorted[i]];
+    let j = i;
+    while (j < sorted.length && finalScores[sorted[j]] === score) j++;
+    const groupSize = j - i;
+    const take = prizeAmounts.slice(
+      pIdx,
+      Math.min(pIdx + groupSize, prizeAmounts.length),
+    );
+    const share = take.reduce((a, b) => a + b, 0) / groupSize;
+    for (let k = i; k < j; k++) shares.set(sorted[k], share);
+    pIdx += take.length;
+    i = j;
+  }
+  return shares;
+}
+
+function classEligible(rating: number | null, cp: ClassPrize): boolean {
+  if (rating === null) return false;
+  if (cp.minRating !== null && rating < cp.minRating) return false;
+  if (cp.maxRating !== null && rating > cp.maxRating) return false;
+  return true;
 }
 
 /**
- * Allocate prizes (overall + class) USCF-style:
- * - Each player wins at most one cash prize, the largest they qualify for.
- * - For each prize (largest first), award to the highest-scoring unpaid
- *   eligible player; ties at that score split this prize equally.
- * Returns the cash the target player ends up with.
+ * Allocate prizes USCF-style with tie pooling and overall-vs-class cascading:
+ * - Within each prize pool (overall, and each class), tied players pool the
+ *   prizes they collectively occupy and split equally.
+ * - Each player takes the LARGER of their overall share vs their class share.
+ *   If they take one, they're removed from competition in the other so the
+ *   freed slot cascades to the next eligible player. Iterates to stability.
  */
 function allocateTargetPayout(
   finalScores: Record<string, number>,
   ratings: Record<string, number | null>,
-  prizes: PrizeSlot[],
+  overallPrizes: number[],
+  classPrizes: ClassPrize[],
   targetPlayer: string,
 ): number {
-  const paid = new Set<string>();
-  let targetCash = 0;
-  // Sort all prizes globally by amount desc.
-  const sorted = [...prizes].sort((a, b) => b.amount - a.amount);
-  // Players sorted by score desc (stable).
-  const players = Object.keys(finalScores).sort(
-    (a, b) => finalScores[b] - finalScores[a],
-  );
-  for (const prize of sorted) {
-    const eligibleUnpaid = players.filter((p) => {
-      if (paid.has(p)) return false;
-      if (!prize.eligible) return true;
-      return prize.eligible(ratings[p] ?? null);
+  const players = Object.keys(finalScores);
+  // pick[p] = "overall" | classIndex (as string) | "none"
+  let pick: Record<string, string> = {};
+  for (const p of players) pick[p] = "overall"; // initial guess
+
+  for (let iter = 0; iter < 25; iter++) {
+    // Overall competitors = players who currently pick overall (or haven't given up on it).
+    // We let any player compete for overall unless they currently picked class.
+    const overallElig = players.filter((p) => pick[p] === "overall");
+    const overallShares = poolShares(overallElig, overallPrizes, finalScores);
+
+    const classSharesAll: Map<string, number>[] = classPrizes.map((cp, ci) => {
+      const elig = players.filter(
+        (p) =>
+          classEligible(ratings[p] ?? null, cp) &&
+          (pick[p] === String(ci) || pick[p] === "overall"),
+        // a player competing for overall is also still a candidate for class
+        // until they commit; this lets the iteration discover the best choice
+      );
+      return poolShares(elig, cp.amounts, finalScores);
     });
-    if (eligibleUnpaid.length === 0) continue;
-    const topScore = finalScores[eligibleUnpaid[0]];
-    const tied = eligibleUnpaid.filter((p) => finalScores[p] === topScore);
-    const share = prize.amount / tied.length;
-    for (const p of tied) {
-      paid.add(p);
-      if (p === targetPlayer) targetCash += share;
+
+    const newPick: Record<string, string> = {};
+    for (const p of players) {
+      let bestAmt = overallShares.get(p) ?? 0;
+      let bestKey = "overall";
+      classPrizes.forEach((cp, ci) => {
+        if (!classEligible(ratings[p] ?? null, cp)) return;
+        const s = classSharesAll[ci].get(p) ?? 0;
+        if (s > bestAmt) {
+          bestAmt = s;
+          bestKey = String(ci);
+        }
+      });
+      if (bestAmt === 0) bestKey = "none";
+      newPick[p] = bestKey;
     }
+
+    let stable = true;
+    for (const p of players) {
+      if (newPick[p] !== pick[p]) {
+        stable = false;
+        break;
+      }
+    }
+    pick = newPick;
+    if (stable) break;
   }
-  return targetCash;
+
+  // Final pass: recompute shares with committed picks and read target's payout.
+  const overallElig = players.filter((p) => pick[p] === "overall");
+  const overallShares = poolShares(overallElig, overallPrizes, finalScores);
+  const finalClassShares = classPrizes.map((cp, ci) => {
+    const elig = players.filter(
+      (p) => pick[p] === String(ci) && classEligible(ratings[p] ?? null, cp),
+    );
+    return poolShares(elig, cp.amounts, finalScores);
+  });
+
+  const choice = pick[targetPlayer];
+  if (choice === "overall") return overallShares.get(targetPlayer) ?? 0;
+  if (choice === "none") return 0;
+  const ci = Number(choice);
+  return finalClassShares[ci]?.get(targetPlayer) ?? 0;
 }
 
 export function calculatePayouts(
@@ -137,25 +214,8 @@ export function calculatePayouts(
     ratings[b[0]] = b[2];
   }
 
-  // Build full prize slot list.
-  const prizeSlots: PrizeSlot[] = [];
-  prizes.forEach((amt, i) =>
-    prizeSlots.push({ label: `${ordinal(i + 1)} overall`, amount: amt, eligible: null }),
-  );
-  for (const cp of classPrizes) {
-    cp.amounts.forEach((amt, i) =>
-      prizeSlots.push({
-        label: `${ordinal(i + 1)} ${cp.label}`,
-        amount: amt,
-        eligible: (r) => {
-          if (r === null) return false; // unrated not eligible for class prizes
-          if (cp.minRating !== null && r < cp.minRating) return false;
-          if (cp.maxRating !== null && r > cp.maxRating) return false;
-          return true;
-        },
-      }),
-    );
-  }
+  // (prize slot list no longer needed — allocator takes overall + class lists directly)
+
 
   const baseline: Record<string, number> = {};
   const variable: Pairing[] = [];
@@ -237,7 +297,7 @@ export function calculatePayouts(
       }
     }
 
-    const targetPayout = allocateTargetPayout(finalScores, ratings, prizeSlots, targetPlayer);
+    const targetPayout = allocateTargetPayout(finalScores, ratings, prizes, classPrizes, targetPlayer);
 
     const m = dist[targetOutcome];
     m.set(targetPayout, (m.get(targetPayout) ?? 0) + 1);
