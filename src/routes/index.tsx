@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { Loader2, Upload, Trophy, Calculator, Sparkles, Crown } from "lucide-react";
 import { extractPairings, type Pairing, type GameResult } from "@/lib/extract-pairings.functions";
-import { calculatePayouts, type CalcResult } from "@/lib/calculate-payouts";
+import { calculatePayouts, parseClassPrizes, type CalcResult } from "@/lib/calculate-payouts";
 import {
   Select,
   SelectContent,
