@@ -129,18 +129,23 @@ function Index() {
 
   const updatePairing = (
     i: number,
-    field: "wn" | "ws" | "bn" | "bs" | "res",
+    field: "wn" | "ws" | "wr" | "bn" | "bs" | "br" | "res",
     value: string,
   ) => {
     setPairings((prev) => {
-      const next = prev.map(
-        (p) => [[...p[0]] as [string, number], [...p[1]] as [string, number], p[2]] as Pairing,
-      );
+      const next: Pairing[] = prev.map((p) => [
+        [p[0][0], p[0][1], p[0][2]],
+        [p[1][0], p[1][1], p[1][2]],
+        p[2],
+      ]);
       const g = next[i];
+      const ratingVal = value.trim() === "" ? null : Number(value);
       if (field === "wn") g[0][0] = value;
       else if (field === "ws") g[0][1] = Number(value);
+      else if (field === "wr") g[0][2] = ratingVal;
       else if (field === "bn") g[1][0] = value;
       else if (field === "bs") g[1][1] = Number(value);
+      else if (field === "br") g[1][2] = ratingVal;
       else g[2] = (value === "none" ? null : (value as GameResult));
       return next;
     });
