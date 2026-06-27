@@ -346,7 +346,24 @@ function Index() {
                 />
               </div>
               <div>
-                <Label htmlFor="player">Your name (exactly as it appears in the pairings)</Label>
+                <Label htmlFor="class-prizes">
+                  Class / under prizes (optional) — one per line
+                </Label>
+                <Textarea
+                  id="class-prizes"
+                  value={classPrizesText}
+                  onChange={(e) => setClassPrizesText(e.target.value)}
+                  placeholder={"Under 2000: 600, 400, 200\nUnder 1800: 500, 300\nClass A: 400"}
+                  className="mt-1 font-mono text-sm"
+                  rows={4}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Supports "Under 2000", "U1800", "Class A", or "1600-1799".
+                  Each player wins only the largest prize they qualify for; ties at a score split that prize.
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="player">Your name</Label>
                 <Input
                   id="player"
                   value={targetPlayer}
