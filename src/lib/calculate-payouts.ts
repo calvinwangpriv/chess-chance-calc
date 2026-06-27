@@ -222,9 +222,46 @@ export function calculatePayouts(
       start,
       end,
       percent: (quad[i] / totalScenarios) * 100,
+      count: quad[i],
     }));
     return { outcome, bins, totalScenarios };
   });
+
+  // Build a plain-language summary of which board results lead to the
+  // best possible payout for the target player.
+  const phrases: string[] = [];
+  for (let i = 0; i < n; i++) {
+    if (radix[i] === 1) continue; // finished game, nothing to wish for
+    const game = variable[i];
+    const [wName] = game[0];
+    const [bName] = game[1];
+    const mask = bestMasks[i];
+    // bit 0 = white wins, bit 1 = draw, bit 2 = black wins
+    if (mask === 0b111) continue; // any result works
+    const isTarget = wName === targetPlayer || bName === targetPlayer;
+    if (isTarget) {
+      const targetIsWhite = wName === targetPlayer;
+      const winBit = targetIsWhite ? 0b001 : 0b100;
+      const loseBit = targetIsWhite ? 0b100 : 0b001;
+      const wants: string[] = [];
+      if (mask & winBit) wants.push("win");
+      if (mask & 0b010) wants.push("draw");
+      if (mask & loseBit) wants.push("lose");
+      phrases.push(`you need to ${wants.join(" or ")}`);
+    } else {
+      switch (mask) {
+        case 0b001: phrases.push(`${wName} must beat ${bName}`); break;
+        case 0b100: phrases.push(`${bName} must beat ${wName}`); break;
+        case 0b010: phrases.push(`${wName} and ${bName} must draw`); break;
+        case 0b011: phrases.push(`${wName} must not lose to ${bName}`); break;
+        case 0b110: phrases.push(`${bName} must not lose to ${wName}`); break;
+        case 0b101: phrases.push(`${wName} vs ${bName} must not be a draw`); break;
+      }
+    }
+  }
+  const bestSummary = phrases.length === 0
+    ? `Your top payout of $${bestPayout} is locked in regardless of any remaining results.`
+    : `To get your top payout of $${bestPayout}, ${phrases.join("; ")}.`;
 
   return {
     totalBoards: pairings.length,
@@ -232,5 +269,7 @@ export function calculatePayouts(
     trivialBoards: trivialCount,
     targetStartScore,
     outcomes: result,
+    bestPayout: bestPayout === -Infinity ? 0 : bestPayout,
+    bestSummary,
   };
 }
