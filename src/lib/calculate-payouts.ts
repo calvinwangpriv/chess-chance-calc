@@ -416,6 +416,10 @@ export function calculatePayouts(
   const loseStat = outcomeStats[2];
   const drawStat = outcomeStats[1];
 
+  const bestClassPrize = bestSource !== "overall" && bestSource !== "none"
+    ? classPrizes.find((cp) => cp.label === bestSource)
+    : null;
+
   const sentences: string[] = [];
   if (targetWish) {
     sentences.push(`Your best-case payout is $${bestPayout.toLocaleString()}, and it requires you to ${targetWish} your own game.`);
