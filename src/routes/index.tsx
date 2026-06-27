@@ -226,7 +226,7 @@ function Index() {
             <CardHeader>
               <CardTitle className="text-lg">
                 <h2 className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-accent/30 text-accent-foreground text-sm font-bold">2</span>
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-sm font-bold">2</span>
                   Verify extracted pairings ({pairings.length})
                 </h2>
               </CardTitle>
