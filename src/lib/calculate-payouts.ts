@@ -440,38 +440,34 @@ export function calculatePayouts(
   }
 
   // Class-prize specific rooting guidance.
-  const targetClassPrizes = classPrizes.filter((cp) => classEligible(ratings[targetPlayer], cp));
-  if (targetClassPrizes.length > 0) {
-    const classesToRoot = bestClassPrize ? [bestClassPrize] : targetClassPrizes;
-    for (const cp of classesToRoot) {
-      const classPhrases: string[] = [];
-      for (let i = 0; i < n; i++) {
-        if (radix[i] === 1) continue;
-        const game = variable[i];
-        const [w, b] = game;
-        const mask = bestMasks[i];
-        if (mask === 0b111) continue;
-        if (w[0] === targetPlayer || b[0] === targetPlayer) continue;
+  if (bestClassPrize) {
+    const classPhrases: string[] = [];
+    for (let i = 0; i < n; i++) {
+      if (radix[i] === 1) continue;
+      const game = variable[i];
+      const [w, b] = game;
+      const mask = bestMasks[i];
+      if (mask === 0b111) continue;
+      if (w[0] === targetPlayer || b[0] === targetPlayer) continue;
 
-        const wElig = classEligible(w[2], cp);
-        const bElig = classEligible(b[2], cp);
-        if (!wElig && !bElig) continue;
+      const wElig = classEligible(w[2], bestClassPrize);
+      const bElig = classEligible(b[2], bestClassPrize);
+      if (!wElig && !bElig) continue;
 
-        if (wElig && mask === 0b100) {
-          classPhrases.push(`${w[0]} loses to ${b[0]}`);
-        } else if (wElig && !(mask & 0b001)) {
-          classPhrases.push(`${w[0]} doesn't beat ${b[0]}`);
-        }
-
-        if (bElig && mask === 0b001) {
-          classPhrases.push(`${b[0]} loses to ${w[0]}`);
-        } else if (bElig && !(mask & 0b100)) {
-          classPhrases.push(`${b[0]} doesn't beat ${w[0]}`);
-        }
+      if (wElig && mask === 0b100) {
+        classPhrases.push(`${w[0]} loses to ${b[0]}`);
+      } else if (wElig && !(mask & 0b001)) {
+        classPhrases.push(`${w[0]} doesn't beat ${b[0]}`);
       }
-      if (classPhrases.length) {
-        sentences.push(`For the ${cp.label} prize, you want ${classPhrases.join("; ")} to eliminate competition.`);
+
+      if (bElig && mask === 0b001) {
+        classPhrases.push(`${b[0]} loses to ${w[0]}`);
+      } else if (bElig && !(mask & 0b100)) {
+        classPhrases.push(`${b[0]} doesn't beat ${w[0]}`);
       }
+    }
+    if (classPhrases.length) {
+      sentences.push(`For the ${bestClassPrize.label} prize, you want ${classPhrases.join("; ")} to eliminate competition.`);
     }
   }
 
