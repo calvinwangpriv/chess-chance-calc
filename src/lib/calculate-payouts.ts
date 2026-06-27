@@ -241,15 +241,12 @@ export function calculatePayouts(
       continue;
     }
 
-    // With class prizes in play, "can't affect target's prize" is harder to
-    // prove safely. Only skip if class prizes empty AND clearly out of range.
+    // Trivial board: both opponents' MAX possible final score is strictly
+    // below the target's MIN possible final score. They can't outrank or tie
+    // the target in any prize pool, so the outcome doesn't affect payout.
     const wMax = w[1] + 1.0;
     const bMax = b[1] + 1.0;
-    if (
-      classPrizes.length === 0 &&
-      wMax < targetStartScore &&
-      bMax < targetStartScore
-    ) {
+    if (wMax < targetStartScore && bMax < targetStartScore) {
       baseline[w[0]] = w[1] + 0.5;
       baseline[b[0]] = b[1] + 0.5;
       trivialCount++;
