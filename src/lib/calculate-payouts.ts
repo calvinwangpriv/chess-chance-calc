@@ -280,6 +280,7 @@ export function calculatePayouts(
   const scenario = new Array<number>(n).fill(0);
   let bestPayout = -Infinity;
   const bestMasks: number[] = new Array(n).fill(0);
+  const bestSourceDist = new Map<string, number>();
   for (let s = 0; s < total; s++) {
     let rem = s;
     for (let i = 0; i < n; i++) {
@@ -300,15 +301,27 @@ export function calculatePayouts(
       }
     }
 
-    const targetPayout = allocateTargetPayout(finalScores, ratings, prizes, classPrizes, targetPlayer);
+    const { payout: targetPayout, source: targetSource } = allocateTargetPayout(finalScores, ratings, prizes, classPrizes, targetPlayer);
 
     const m = dist[targetOutcome];
     m.set(targetPayout, (m.get(targetPayout) ?? 0) + 1);
     if (targetPayout > bestPayout) {
       bestPayout = targetPayout;
+      bestSourceDist.clear();
+      bestSourceDist.set(targetSource, 1);
       for (let i = 0; i < n; i++) bestMasks[i] = 1 << scenario[i];
     } else if (targetPayout === bestPayout) {
+      bestSourceDist.set(targetSource, (bestSourceDist.get(targetSource) ?? 0) + 1);
       for (let i = 0; i < n; i++) bestMasks[i] |= 1 << scenario[i];
+    }
+  }
+
+  let bestSource = "none";
+  let bestSourceCount = 0;
+  for (const [src, count] of bestSourceDist.entries()) {
+    if (count > bestSourceCount) {
+      bestSourceCount = count;
+      bestSource = src;
     }
   }
 
