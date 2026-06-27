@@ -84,6 +84,7 @@ function Index() {
   const [pairings, setPairings] = useState<Pairing[]>([]);
   const [result, setResult] = useState<CalcResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [calcBusy, setCalcBusy] = useState(false);
 
   const onFile = async (f: File | null) => {
     setImageFile(f);
@@ -111,7 +112,7 @@ function Index() {
     }
   };
 
-  const runCalc = () => {
+  const runCalc = async () => {
     if (!pairings.length) return toast.error("Extract pairings first.");
     if (!targetPlayer.trim()) return toast.error("Enter your player name.");
     const prizeSource = prizes.trim() || "12000, 6000, 3000, 1500, 1000, 800, 600, 500, 400, 400";
@@ -120,12 +121,17 @@ function Index() {
       .map((s) => Number(s.trim().replace(/[^\d.]/g, "")))
       .filter((n) => !Number.isNaN(n) && n > 0);
     if (!prizeArr.length) return toast.error("Enter at least one prize.");
+    setCalcBusy(true);
     try {
+      // Yield to the browser so the spinner can paint before the heavy sync loop.
+      await new Promise((r) => setTimeout(r, 30));
       const classPrizes = parseClassPrizes(classPrizesText);
       const r = calculatePayouts(pairings, targetPlayer.trim(), prizeArr, classPrizes);
       setResult(r);
     } catch (e: any) {
       toast.error(e?.message ?? "Calculation failed.");
+    } finally {
+      setCalcBusy(false);
     }
   };
 
@@ -370,12 +376,12 @@ function Index() {
               </div>
               <Button
                 onClick={runCalc}
-                disabled={!pairings.length}
-                className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02]"
+                disabled={!pairings.length || calcBusy}
+                className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02] disabled:opacity-70 disabled:hover:scale-100"
                 style={{ background: "var(--gradient-hero)" }}
               >
-                <Calculator className="mr-2 h-4 w-4" />
-                Calculate odds
+                {calcBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Calculator className="mr-2 h-4 w-4" />}
+                {calcBusy ? "Calculating…" : "Calculate odds"}
               </Button>
             </CardContent>
           </Card>
