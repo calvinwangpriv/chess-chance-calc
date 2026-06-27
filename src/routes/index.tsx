@@ -112,7 +112,7 @@ function Index() {
     }
   };
 
-  const runCalc = () => {
+  const runCalc = async () => {
     if (!pairings.length) return toast.error("Extract pairings first.");
     if (!targetPlayer.trim()) return toast.error("Enter your player name.");
     const prizeSource = prizes.trim() || "12000, 6000, 3000, 1500, 1000, 800, 600, 500, 400, 400";
@@ -121,12 +121,17 @@ function Index() {
       .map((s) => Number(s.trim().replace(/[^\d.]/g, "")))
       .filter((n) => !Number.isNaN(n) && n > 0);
     if (!prizeArr.length) return toast.error("Enter at least one prize.");
+    setCalcBusy(true);
     try {
+      // Yield to the browser so the spinner can paint before the heavy sync loop.
+      await new Promise((r) => setTimeout(r, 30));
       const classPrizes = parseClassPrizes(classPrizesText);
       const r = calculatePayouts(pairings, targetPlayer.trim(), prizeArr, classPrizes);
       setResult(r);
     } catch (e: any) {
       toast.error(e?.message ?? "Calculation failed.");
+    } finally {
+      setCalcBusy(false);
     }
   };
 
