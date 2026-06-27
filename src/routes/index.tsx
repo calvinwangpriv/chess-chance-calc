@@ -343,23 +343,23 @@ function Index() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="prizes">Prize list (1st, 2nd, 3rd, …)</Label>
-                <Textarea
+                <Input
                   id="prizes"
                   value={prizes}
                   onChange={(e) => setPrizes(e.target.value)}
-                  placeholder="12000, 6000, 3000, 1500, 1000, 800, 600, 500, 400, 400"
+                  placeholder="Ex: 12000, 6000, 3000, 1500, 1000, 800, 600, 500, 400, 400"
                   className="mt-1"
                 />
               </div>
               <div>
                 <Label htmlFor="class-prizes">
-                  Subsection prize list (optional) — one per line
+                  Subsection prize list (optional)
                 </Label>
                 <Textarea
                   id="class-prizes"
                   value={classPrizesText}
                   onChange={(e) => setClassPrizesText(e.target.value)}
-                  placeholder={"Under 2000: 600, 400, 200\nUnder 1800: 500, 300"}
+                  placeholder={"Ex: Under 2000: 600, 400, 200\nUnder 1800: 500, 300"}
                   className="mt-1"
                   rows={4}
                 />
