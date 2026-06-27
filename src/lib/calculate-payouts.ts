@@ -125,7 +125,7 @@ function allocateTargetPayout(
   overallPrizes: number[],
   classPrizes: ClassPrize[],
   targetPlayer: string,
-): number {
+): { payout: number; source: string } {
   const players = Object.keys(finalScores);
   // pick[p] = "overall" | classIndex (as string) | "none"
   let pick: Record<string, string> = {};
@@ -186,10 +186,16 @@ function allocateTargetPayout(
   });
 
   const choice = pick[targetPlayer];
-  if (choice === "overall") return overallShares.get(targetPlayer) ?? 0;
-  if (choice === "none") return 0;
+  if (choice === "overall") {
+    return { payout: overallShares.get(targetPlayer) ?? 0, source: "overall" };
+  }
+  if (choice === "none") return { payout: 0, source: "none" };
   const ci = Number(choice);
-  return finalClassShares[ci]?.get(targetPlayer) ?? 0;
+  const cp = classPrizes[ci];
+  return {
+    payout: finalClassShares[ci]?.get(targetPlayer) ?? 0,
+    source: cp?.label ?? "class",
+  };
 }
 
 export function calculatePayouts(
