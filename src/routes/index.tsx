@@ -214,7 +214,7 @@ function Index() {
 
         {pairings.length > 0 && (
           <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
-            <div className="h-1" style={{ background: "var(--gradient-accent)" }} />
+            <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
             <CardHeader>
               <CardTitle className="text-lg">
                 <h2 className="flex items-center gap-2">
