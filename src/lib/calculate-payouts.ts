@@ -1,6 +1,6 @@
 export type GameResult = "1-0" | "0-1" | "1/2" | null;
 export type PlayerEntry = [string, number, number | null];
-export type Pairing = [PlayerEntry, PlayerEntry, GameResult];
+export type Pairing = [PlayerEntry, PlayerEntry, GameResult, (number | null)?];
 
 export interface ClassPrize {
   label: string;
