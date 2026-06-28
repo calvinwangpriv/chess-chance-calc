@@ -187,7 +187,7 @@ function Index() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-10 space-y-6">
+      <main className="mx-auto max-w-5xl px-2 sm:px-4 py-4 sm:py-7 space-y-4">
         <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
           <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
           <CardHeader>
@@ -232,7 +232,7 @@ function Index() {
         {pairings.length > 0 && (
           <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
             <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
-            <CardHeader>
+            <CardHeader className="px-3 py-3 sm:px-5 sm:py-4">
               <CardTitle className="text-lg">
                 <h2 className="flex items-center gap-2">
                   <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-sm font-bold">2</span>
@@ -240,14 +240,14 @@ function Index() {
                 </h2>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+            <CardContent className="px-2 pb-3 sm:px-5 sm:pb-5">
+              <div className="space-y-2">
                 {pairings.map((p, i) => (
                   <div
                     key={i}
-                    className="rounded-lg border border-border/60 bg-card p-3 hover:bg-muted/20 transition-colors"
+                    className="rounded-lg border border-border/60 bg-card p-1.5 sm:p-3 hover:bg-muted/20 transition-colors"
                   >
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-1.5 mb-1.5 sm:gap-2 sm:mb-2">
                       <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/15 text-primary text-xs font-bold tabular-nums">
                         {i + 1}
                       </span>
@@ -256,95 +256,20 @@ function Index() {
                       </span>
                     </div>
 
-                    {/* Mobile: stacked white/black with result between. sm+: side-by-side */}
-                    <div className="space-y-2 sm:hidden">
-                      {/* White */}
-                      <div className="rounded-md bg-muted/30 p-2 space-y-2">
-                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">White</div>
+                    <div>
+                      <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)] gap-1 sm:gap-2 items-center">
                         <Input
                           aria-label={`Board ${i + 1} white player name`}
-                          placeholder="Name"
-                          value={p[0][0]}
-                          onChange={(e) => updatePairing(i, "wn", e.target.value)}
-                        />
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input
-                            aria-label={`Board ${i + 1} white rating`}
-                            type="number"
-                            placeholder="Rating"
-                            value={p[0][2] ?? ""}
-                            onChange={(e) => updatePairing(i, "wr", e.target.value)}
-                          />
-                          <Input
-                            aria-label={`Board ${i + 1} white score`}
-                            type="number"
-                            step="0.5"
-                            placeholder="Score"
-                            value={p[0][1]}
-                            onChange={(e) => updatePairing(i, "ws", e.target.value)}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Result */}
-                      <Select
-                        value={p[2] ?? "none"}
-                        onValueChange={(v) => updatePairing(i, "res", v)}
-                      >
-                        <SelectTrigger aria-label={`Board ${i + 1} result`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">---</SelectItem>
-                          <SelectItem value="1-0">1-0</SelectItem>
-                          <SelectItem value="1/2">0.5-0.5</SelectItem>
-                          <SelectItem value="0-1">0-1</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      {/* Black */}
-                      <div className="rounded-md bg-muted/30 p-2 space-y-2">
-                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Black</div>
-                        <Input
-                          aria-label={`Board ${i + 1} black player name`}
-                          placeholder="Name"
-                          value={p[1][0]}
-                          onChange={(e) => updatePairing(i, "bn", e.target.value)}
-                        />
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input
-                            aria-label={`Board ${i + 1} black rating`}
-                            type="number"
-                            placeholder="Rating"
-                            value={p[1][2] ?? ""}
-                            onChange={(e) => updatePairing(i, "br", e.target.value)}
-                          />
-                          <Input
-                            aria-label={`Board ${i + 1} black score`}
-                            type="number"
-                            step="0.5"
-                            placeholder="Score"
-                            value={p[1][1]}
-                            onChange={(e) => updatePairing(i, "bs", e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* sm+: side-by-side */}
-                    <div className="hidden sm:block">
-                      <div className="grid grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)] gap-2 items-center">
-                        <Input
-                          aria-label={`Board ${i + 1} white player name (desktop)`}
                           placeholder="White"
                           value={p[0][0]}
+                          className="min-w-0 h-8 px-2 text-xs sm:h-9 sm:text-sm"
                           onChange={(e) => updatePairing(i, "wn", e.target.value)}
                         />
                         <Select
                           value={p[2] ?? "none"}
                           onValueChange={(v) => updatePairing(i, "res", v)}
                         >
-                          <SelectTrigger aria-label={`Board ${i + 1} result (desktop)`}>
+                          <SelectTrigger aria-label={`Board ${i + 1} result`} className="h-8 px-2 text-xs sm:h-9 sm:text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -355,45 +280,50 @@ function Index() {
                           </SelectContent>
                         </Select>
                         <Input
-                          aria-label={`Board ${i + 1} black player name (desktop)`}
+                          aria-label={`Board ${i + 1} black player name`}
                           placeholder="Black"
                           value={p[1][0]}
+                          className="min-w-0 h-8 px-2 text-xs sm:h-9 sm:text-sm"
                           onChange={(e) => updatePairing(i, "bn", e.target.value)}
                         />
                       </div>
-                      <div className="grid grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)] gap-2 mt-2">
-                        <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)] gap-1 sm:gap-2 mt-1 sm:mt-2">
+                        <div className="grid grid-cols-2 gap-1 sm:gap-2">
                           <Input
-                            aria-label={`Board ${i + 1} white rating (desktop)`}
+                            aria-label={`Board ${i + 1} white rating`}
                             type="number"
                             placeholder="Rating"
                             value={p[0][2] ?? ""}
+                            className="min-w-0 h-8 px-2 text-xs sm:h-9 sm:text-sm"
                             onChange={(e) => updatePairing(i, "wr", e.target.value)}
                           />
                           <Input
-                            aria-label={`Board ${i + 1} white score (desktop)`}
+                            aria-label={`Board ${i + 1} white score`}
                             type="number"
                             step="0.5"
                             placeholder="Score"
                             value={p[0][1]}
+                            className="min-w-0 h-8 px-2 text-xs sm:h-9 sm:text-sm"
                             onChange={(e) => updatePairing(i, "ws", e.target.value)}
                           />
                         </div>
                         <div />
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-1 sm:gap-2">
                           <Input
-                            aria-label={`Board ${i + 1} black rating (desktop)`}
+                            aria-label={`Board ${i + 1} black rating`}
                             type="number"
                             placeholder="Rating"
                             value={p[1][2] ?? ""}
+                            className="min-w-0 h-8 px-2 text-xs sm:h-9 sm:text-sm"
                             onChange={(e) => updatePairing(i, "br", e.target.value)}
                           />
                           <Input
-                            aria-label={`Board ${i + 1} black score (desktop)`}
+                            aria-label={`Board ${i + 1} black score`}
                             type="number"
                             step="0.5"
                             placeholder="Score"
                             value={p[1][1]}
+                            className="min-w-0 h-8 px-2 text-xs sm:h-9 sm:text-sm"
                             onChange={(e) => updatePairing(i, "bs", e.target.value)}
                           />
                         </div>
@@ -410,7 +340,7 @@ function Index() {
         {pairings.length > 0 && (
           <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
             <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
-            <CardHeader>
+            <CardHeader className="px-3 py-3 sm:px-5 sm:py-4">
               <CardTitle className="text-lg">
                 <h2 className="flex items-center gap-2">
                   <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-sm font-bold">3</span>
@@ -418,7 +348,7 @@ function Index() {
                 </h2>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 px-3 pb-3 sm:px-5 sm:pb-5">
               <div>
                 <Label htmlFor="prizes">Prize list (1st, 2nd, 3rd, …)</Label>
                 <Input
@@ -466,9 +396,9 @@ function Index() {
         )}
 
         {result && (
-          <Card className="mx-auto w-full max-w-2xl border-border/60 shadow-[var(--shadow-elegant)] overflow-hidden">
+          <Card className="mx-auto w-full max-w-[30rem] border-border/60 shadow-[var(--shadow-elegant)] overflow-hidden">
             <div className="h-1.5" style={{ background: "var(--gradient-hero)" }} />
-            <CardHeader>
+            <CardHeader className="px-2.5 py-2 sm:px-4 sm:py-3">
               <CardTitle className="text-lg">
                 <h2 className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-accent" />
@@ -476,10 +406,10 @@ function Index() {
                 </h2>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-5">
+            <CardContent className="space-y-2 px-2 pb-2 sm:px-4 sm:pb-4">
 
               <div
-                className="rounded-xl border border-accent/40 p-3 sm:p-4 flex gap-3 items-start"
+                className="rounded-lg border border-accent/40 p-2 sm:p-3 flex gap-2 items-start"
                 style={{ background: "color-mix(in oklab, var(--accent) 12%, var(--card))" }}
               >
                 <Crown className="h-5 w-5 text-accent shrink-0 mt-0.5" />
@@ -487,7 +417,7 @@ function Index() {
                   <div className="text-xs uppercase tracking-wider font-semibold text-accent-foreground/80 mb-1">
                     What you're rooting for
                   </div>
-                  <p className="text-sm leading-relaxed">{result.bestSummary}</p>
+                  <p className="text-xs sm:text-sm leading-relaxed">{result.bestSummary}</p>
 
                 </div>
               </div>
@@ -496,10 +426,10 @@ function Index() {
               {result.outcomes.map((o) => {
                 const s = outcomeStyles[o.outcome];
                 return (
-                  <div key={o.outcome} className={`rounded-xl border border-border/60 p-2.5 sm:p-3 ring-1 ${s.ring} bg-card`}>
+                    <div key={o.outcome} className={`rounded-lg border border-border/60 p-2 ring-1 ${s.ring} bg-card`}>
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 mb-2">
-                      <h2 className="font-semibold text-base flex items-center gap-2">
-                        <span className="text-xl">{s.icon}</span>
+                        <h2 className="font-semibold text-sm sm:text-base flex items-center gap-1.5 min-w-0">
+                          <span className="text-lg sm:text-xl">{s.icon}</span>
                         If you {o.outcome.toLowerCase()}:
                       </h2>
                       <span className={`shrink-0 text-[10px] sm:text-xs px-2 py-1 rounded-full font-medium tabular-nums ${s.chip}`}>
@@ -516,7 +446,7 @@ function Index() {
                     ) : (
                       <div className="space-y-1">
                         {[...o.bins].reverse().map((b, idx) => (
-                          <div key={idx} className="grid grid-cols-[2.75rem_minmax(3rem,1fr)_4.5rem_4.75rem] sm:grid-cols-[3rem_minmax(4rem,1fr)_4.75rem_5.25rem] items-center gap-1.5 sm:gap-2 text-xs">
+                          <div key={idx} className="grid grid-cols-[2.45rem_minmax(2.5rem,1fr)_4.15rem_4.25rem] sm:grid-cols-[2.75rem_minmax(3rem,1fr)_4.5rem_4.75rem] items-center gap-1 text-[11px] sm:text-xs">
                             <div className="text-right tabular-nums font-semibold">
                               {b.percent.toFixed(1)}%
                             </div>
