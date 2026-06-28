@@ -22,7 +22,10 @@ export type StandingsPlayer = {
   rating: number | null;
   score: number;
   games: StandingsGame[];
+  /** Total rounds in this player's section (may differ across sections). */
+  sectionRounds?: number;
 };
+
 
 export const extractStandings = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
