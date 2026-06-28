@@ -57,12 +57,11 @@ function RatingPage() {
   const [playerName, setPlayerName] = useState("");
   const [players, setPlayers] = useState<StandingsPlayer[]>([]);
   const [, setLiveRatings] = useState<Record<string, LiveRatingInfo>>({});
-  const [result, setResult] = useState<{
-    calc: RatingCalc;
-    used: { opponent: string; opponentRating: number; score: number; source: "live" | "official" }[];
-    skipped: { opponent: string; reason: string }[];
-    currentRatingUsed: number;
-  } | null>(null);
+  const [used, setUsed] = useState<
+    { round: number; opponent: string; opponentRating: number; score: number }[]
+  >([]);
+  const [skipped, setSkipped] = useState<{ opponent: string; reason: string }[]>([]);
+  const [currentRatingUsed, setCurrentRatingUsed] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [calcBusy, setCalcBusy] = useState(false);
 
