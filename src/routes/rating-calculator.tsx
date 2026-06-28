@@ -474,17 +474,18 @@ function RatingPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <Stat
                   label="Current rating"
-                  value={
-                    (mode === "manual"
-                      ? Number(manualCurrentRating) || null
-                      : currentRatingUsed)?.toString() ?? "—"
-                  }
+                  value={currentRating?.toString() ?? "—"}
                 />
                 <Stat label="Avg opp rating" value={calc?.avgOpponentRating.toString() ?? "—"} />
                 <Stat
                   label="Performance"
                   value={calc?.performanceRating?.toString() ?? "—"}
                   accent
+                  delta={
+                    calc?.performanceRating != null && currentRating != null
+                      ? calc.performanceRating - currentRating
+                      : undefined
+                  }
                 />
                 <Stat
                   label="Projected new rating"
@@ -493,6 +494,11 @@ function RatingPage() {
                   sub={
                     calc
                       ? `${calc.ratingChange >= 0 ? "+" : ""}${calc.ratingChange}`
+                      : undefined
+                  }
+                  delta={
+                    calc != null && currentRating != null
+                      ? calc.newRating - currentRating
                       : undefined
                   }
                 />
