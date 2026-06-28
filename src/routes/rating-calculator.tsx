@@ -18,7 +18,7 @@ import {
 import { type StandingsPlayer } from "@/lib/extract-standings.functions";
 import { scrapeStandings } from "@/lib/scrape-standings.functions";
 import { fetchUscfRatings, type LiveRatingInfo } from "@/lib/fetch-uscf-ratings.functions";
-import { calculateRating, type RatedGame, type RatingCalc } from "@/lib/calculate-rating";
+import { calculateRating } from "@/lib/calculate-rating";
 
 export const Route = createFileRoute("/rating-calculator")({
   head: () => ({
