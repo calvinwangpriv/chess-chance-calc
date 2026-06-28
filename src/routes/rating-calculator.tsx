@@ -9,17 +9,14 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import {
   Loader2,
-  Upload,
+  Link2,
   TrendingUp,
   Sparkles,
   Calculator,
   Target,
-  X,
 } from "lucide-react";
-import {
-  extractStandings,
-  type StandingsPlayer,
-} from "@/lib/extract-standings.functions";
+import { type StandingsPlayer } from "@/lib/extract-standings.functions";
+import { scrapeStandings } from "@/lib/scrape-standings.functions";
 import { fetchUscfRatings, type LiveRatingInfo } from "@/lib/fetch-uscf-ratings.functions";
 import { calculateRating, type RatedGame, type RatingCalc } from "@/lib/calculate-rating";
 
