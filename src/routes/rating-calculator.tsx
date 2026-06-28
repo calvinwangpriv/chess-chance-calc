@@ -641,16 +641,30 @@ function Stat({
   value,
   sub,
   accent,
+  delta,
 }: {
   label: string;
   value: string;
   sub?: string;
   accent?: boolean;
+  delta?: number;
 }) {
+  const color = ratingColor(delta);
+  const hasDelta = delta !== undefined && !Number.isNaN(delta);
   return (
-    <div className="rounded-lg border border-border/60 bg-card p-2.5">
+    <div
+      className={`rounded-lg border p-2.5 ${hasDelta ? "" : "border-border/60 bg-card"}`}
+      style={
+        hasDelta
+          ? { background: color.bg, borderColor: color.border, borderWidth: "2px" }
+          : undefined
+      }
+    >
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={`mt-0.5 text-lg sm:text-xl font-bold tabular-nums ${accent ? "text-primary" : ""}`}>
+      <div
+        className={`mt-0.5 text-lg sm:text-xl font-bold tabular-nums ${accent ? "text-primary" : ""}`}
+        style={hasDelta ? { color: color.text } : undefined}
+      >
         {value}
       </div>
       {sub && <div className="text-xs text-muted-foreground tabular-nums">{sub}</div>}
