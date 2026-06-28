@@ -52,6 +52,24 @@ function normName(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
 }
 
+function ratingColor(delta: number | undefined): {
+  text: string;
+  bg: string;
+  border: string;
+} {
+  if (delta == null || Number.isNaN(delta)) {
+    return { text: "inherit", bg: "transparent", border: "hsl(var(--border))" };
+  }
+  const clamped = Math.max(-100, Math.min(100, delta));
+  const hue = 60 + (clamped / 100) * 60;
+  return {
+    text: `hsl(${hue}, 70%, 45%)`,
+    bg: `linear-gradient(135deg, hsl(${hue}, 70%, 95%) 0%, hsl(${hue}, 70%, 90%) 100%)`,
+    border: `hsl(${hue}, 60%, 70%)`,
+  };
+}
+
+
 type GameRow = {
   round: number;
   opponent: string;
