@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RatingCalculatorRouteImport } from './routes/rating-calculator'
 import { Route as PrizeCalculatorRouteImport } from './routes/prize-calculator'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RatingCalculatorRoute = RatingCalculatorRouteImport.update({
+  id: '/rating-calculator',
+  path: '/rating-calculator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrizeCalculatorRoute = PrizeCalculatorRouteImport.update({
@@ -32,30 +38,39 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/prize-calculator': typeof PrizeCalculatorRoute
+  '/rating-calculator': typeof RatingCalculatorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/prize-calculator': typeof PrizeCalculatorRoute
+  '/rating-calculator': typeof RatingCalculatorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/prize-calculator': typeof PrizeCalculatorRoute
+  '/rating-calculator': typeof RatingCalculatorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/prize-calculator' | '/sitemap.xml'
+  fullPaths: '/' | '/prize-calculator' | '/rating-calculator' | '/sitemap.xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/prize-calculator' | '/sitemap.xml'
-  id: '__root__' | '/' | '/prize-calculator' | '/sitemap.xml'
+  to: '/' | '/prize-calculator' | '/rating-calculator' | '/sitemap.xml'
+  id:
+    | '__root__'
+    | '/'
+    | '/prize-calculator'
+    | '/rating-calculator'
+    | '/sitemap.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PrizeCalculatorRoute: typeof PrizeCalculatorRoute
+  RatingCalculatorRoute: typeof RatingCalculatorRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
@@ -66,6 +81,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rating-calculator': {
+      id: '/rating-calculator'
+      path: '/rating-calculator'
+      fullPath: '/rating-calculator'
+      preLoaderRoute: typeof RatingCalculatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/prize-calculator': {
@@ -88,6 +110,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PrizeCalculatorRoute: PrizeCalculatorRoute,
+  RatingCalculatorRoute: RatingCalculatorRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
