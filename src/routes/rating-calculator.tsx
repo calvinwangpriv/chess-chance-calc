@@ -162,13 +162,11 @@ function RatingPage() {
 
   const me = useMemo(() => {
     if (!playerName.trim() || !players.length) return null;
-    const target = normName(playerName);
-    return (
-      players.find((p) => normName(p.name) === target) ??
-      players.find((p) => normName(p.name).includes(target)) ??
-      null
-    );
+    const exact = players.find((p) => normName(p.name) === normName(playerName));
+    if (exact) return exact;
+    return players.find((p) => nameMatches(p.name, playerName)) ?? null;
   }, [players, playerName]);
+
 
   const runCalc = async () => {
     if (!players.length) return toast.error("Extract standings first.");
