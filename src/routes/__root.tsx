@@ -124,14 +124,14 @@ function RootComponent() {
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 activeProps={{ className: "text-foreground font-medium" }}
               >
-                Prize odds
+                Prize calculator
               </Link>
               <Link
                 to="/rating-calculator"
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 activeProps={{ className: "text-foreground font-medium" }}
               >
-                Rating
+                Rating calculator
               </Link>
             </div>
           </div>
