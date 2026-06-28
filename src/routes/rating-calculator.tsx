@@ -362,13 +362,14 @@ function RatingPage() {
                     type="url"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://chessevents.com/event/.../standings/.."
+                    placeholder="ChessEvents.com or ChessRoster.com tournament URL"
                     className="mt-1 h-8 px-2 text-xs sm:h-9 sm:text-sm"
                     autoComplete="off"
                   />
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    We scrape the standings table directly — no screenshots needed.
+                    Supports ChessEvents standings pages and ChessRoster tournament links.
                   </p>
+
                 </div>
                 <Button
                   onClick={runExtract}
