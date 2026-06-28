@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/prize-calculator")({
   head: () => ({
     meta: [
       { title: "Chess Prize Odds Calculator" },

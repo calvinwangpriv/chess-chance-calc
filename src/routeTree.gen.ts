@@ -10,42 +10,42 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as PrizeCalculatorRouteImport } from './routes/prize-calculator'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const PrizeCalculatorRoute = PrizeCalculatorRouteImport.update({
+  id: '/prize-calculator',
+  path: '/prize-calculator',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/prize-calculator': typeof PrizeCalculatorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/prize-calculator': typeof PrizeCalculatorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/prize-calculator': typeof PrizeCalculatorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sitemap.xml'
+  fullPaths: '/prize-calculator' | '/sitemap.xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sitemap.xml'
-  id: '__root__' | '/' | '/sitemap.xml'
+  to: '/prize-calculator' | '/sitemap.xml'
+  id: '__root__' | '/prize-calculator' | '/sitemap.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  PrizeCalculatorRoute: typeof PrizeCalculatorRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
@@ -58,18 +58,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/prize-calculator': {
+      id: '/prize-calculator'
+      path: '/prize-calculator'
+      fullPath: '/prize-calculator'
+      preLoaderRoute: typeof PrizeCalculatorRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  PrizeCalculatorRoute: PrizeCalculatorRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
