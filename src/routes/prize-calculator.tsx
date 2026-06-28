@@ -35,9 +35,9 @@ export const Route = createFileRoute("/prize-calculator")({
         content:
           "Upload a SwissSys pairing sheet and instantly see your expected prize money for each result.",
       },
-      { property: "og:url", content: "/" },
+      { property: "og:url", content: "/prize-calculator" },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [{ rel: "canonical", href: "/prize-calculator" }],
   }),
   component: Index,
 });
