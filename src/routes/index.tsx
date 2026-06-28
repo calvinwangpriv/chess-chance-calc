@@ -373,7 +373,7 @@ function Index() {
                   id="class-prizes"
                   value={classPrizesText}
                   onChange={(e) => setClassPrizesText(e.target.value)}
-                  placeholder={"Ex: U2000: 600, 400, 200\nU1800: 500, 300"}
+                  placeholder={"Ex: U2000: 600, 400, 200"}
                   className="mt-1 px-2 py-1.5 text-xs sm:text-sm min-h-0"
                   rows={Math.max(1, classPrizesText.split("\n").length)}
                 />
