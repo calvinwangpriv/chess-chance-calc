@@ -124,38 +124,36 @@ function RatingPage() {
         setLiveRatings(ratingMap);
       }
 
-      const used: { opponent: string; opponentRating: number; score: number; source: "live" | "official" }[] = [];
-      const skipped: { opponent: string; reason: string }[] = [];
-      const ratedGames: RatedGame[] = [];
+      const usedRows: { round: number; opponent: string; opponentRating: number; score: number }[] = [];
+      const skippedRows: { opponent: string; reason: string }[] = [];
 
       for (const g of me.games) {
         const score = resultToScore(g.result);
         if (score == null) continue; // unplayed / bye
         if (g.opponentPairing == null) {
-          skipped.push({ opponent: `Round ${g.round}`, reason: "bye / forfeit (not rated)" });
+          skippedRows.push({ opponent: `Round ${g.round}`, reason: "bye / forfeit (not rated)" });
           continue;
         }
         const opp = byPair.get(g.opponentPairing);
         if (!opp) {
-          skipped.push({ opponent: `#${g.opponentPairing}`, reason: "opponent not found in standings" });
+          skippedRows.push({ opponent: `#${g.opponentPairing}`, reason: "opponent not found in standings" });
           continue;
         }
         const live = opp.uscfId ? ratingMap[opp.uscfId]?.liveRating : null;
         const rating = live ?? opp.rating;
         if (rating == null) {
-          skipped.push({ opponent: opp.name, reason: "no rating available" });
+          skippedRows.push({ opponent: opp.name, reason: "no rating available" });
           continue;
         }
-        ratedGames.push({ opponentRating: rating, score, opponentName: opp.name });
-        used.push({
+        usedRows.push({
+          round: g.round,
           opponent: opp.name,
           opponentRating: rating,
           score,
-          source: live != null ? "live" : "official",
         });
       }
 
-      if (!ratedGames.length) {
+      if (!usedRows.length) {
         toast.error("No rated games available to compute a rating.");
         setCalcBusy(false);
         return;
@@ -163,13 +161,26 @@ function RatingPage() {
 
       const myLive = me.uscfId ? ratingMap[me.uscfId]?.liveRating : null;
       const currentRating = myLive ?? me.rating ?? 1500;
-      const calc = calculateRating(currentRating, ratedGames);
-      setResult({ calc, used, skipped, currentRatingUsed: currentRating });
+      setUsed(usedRows);
+      setSkipped(skippedRows);
+      setCurrentRatingUsed(currentRating);
     } catch (e: any) {
       toast.error(e?.message ?? "Calculation failed.");
     } finally {
       setCalcBusy(false);
     }
+  };
+
+  const calc = useMemo(() => {
+    if (currentRatingUsed == null || used.length === 0) return null;
+    return calculateRating(
+      currentRatingUsed,
+      used.map((u) => ({ opponentRating: u.opponentRating, score: u.score, opponentName: u.opponent })),
+    );
+  }, [used, currentRatingUsed]);
+
+  const updateScore = (idx: number, score: number) => {
+    setUsed((prev) => prev.map((u, i) => (i === idx ? { ...u, score } : u)));
   };
 
   return (
