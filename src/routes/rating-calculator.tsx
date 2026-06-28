@@ -199,64 +199,48 @@ function RatingPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-2 sm:px-4 py-4 sm:py-7 space-y-4">
-        {/* Step 1: upload */}
+        {/* Step 1: standings URL */}
         <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
           <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
           <CardHeader className="px-3 py-3 sm:px-5 sm:py-4">
             <CardTitle className="text-base">
               <h2 className="flex items-center gap-2">
                 <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-xs font-bold">1</span>
-                <Upload className="h-4 w-4 text-primary" /> Upload standings sheet(s)
+                <Link2 className="h-4 w-4 text-primary" /> Standings URL
               </h2>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 px-3 pb-3 sm:px-5 sm:pb-5">
             <div>
-              <Label htmlFor="standings-images" className="text-xs sm:text-sm">
-                Standings image(s) — you can select multiple pages
+              <Label htmlFor="standings-url" className="text-xs sm:text-sm">
+                Paste your section's standings page URL
               </Label>
               <Input
-                id="standings-images"
-                type="file"
-                accept="image/*"
-                multiple
-                aria-label="Upload standings images"
-                onChange={(e) => onFiles(e.target.files)}
-                className="cursor-pointer mt-1 h-8 px-2 text-xs sm:h-9 sm:text-sm file:text-xs sm:file:text-sm"
+                id="standings-url"
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://chessevents.com/event/.../standings/.."
+                className="mt-1 h-8 px-2 text-xs sm:h-9 sm:text-sm"
+                autoComplete="off"
               />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                We scrape the standings table directly — no screenshots needed.
+              </p>
             </div>
-            {previews.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {previews.map((src, i) => (
-                  <div key={i} className="relative group">
-                    <img
-                      src={src}
-                      alt={`Standings page ${i + 1}`}
-                      className="max-h-40 w-full rounded-lg border border-border/60 object-contain shadow-[var(--shadow-soft)]"
-                    />
-                    <button
-                      onClick={() => removeFile(i)}
-                      className="absolute top-1 right-1 rounded-full bg-background/90 border border-border p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label={`Remove image ${i + 1}`}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
             <Button
               onClick={runExtract}
-              disabled={busy || !files.length}
+              disabled={busy || !url.trim()}
               size="sm"
               className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02] text-xs sm:text-sm"
               style={{ background: "var(--gradient-hero)" }}
             >
               {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Extract standings with AI
+              Load standings
             </Button>
           </CardContent>
         </Card>
+
 
         {/* Step 2: name + calc */}
         {players.length > 0 && (
