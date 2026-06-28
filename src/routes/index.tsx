@@ -455,7 +455,7 @@ function Index() {
                     ) : (
                       <div className="space-y-1">
                         {[...o.bins].reverse().map((b, idx) => (
-                          <div key={idx} className="grid grid-cols-[2.45rem_minmax(2.5rem,1fr)_4.15rem_4.25rem] sm:grid-cols-[2.75rem_minmax(3rem,1fr)_4.5rem_4.75rem] items-center gap-1 text-[11px] sm:text-xs">
+                        <div key={idx} className="grid grid-cols-[2.25rem_1fr_5.5rem_3.5rem] sm:grid-cols-[2.5rem_1fr_6rem_4rem] items-center gap-1 text-[11px] sm:text-xs">
                             <div className="text-right tabular-nums font-semibold">
                               {b.percent.toFixed(1)}%
                             </div>
@@ -465,7 +465,7 @@ function Index() {
                                 style={{ width: `${b.percent}%` }}
                               />
                             </div>
-                            <div className="text-right tabular-nums font-medium text-foreground">
+                            <div className="text-right tabular-nums font-medium text-foreground whitespace-nowrap">
                               ${b.start}–${b.end}
                             </div>
                             <div className="text-right text-muted-foreground tabular-nums text-[10px] sm:text-[11px] opacity-70">
