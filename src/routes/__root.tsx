@@ -114,9 +114,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen flex flex-col">
         <nav className="border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-50">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 h-12 flex items-center gap-4 text-sm">
-            <Link to="/" className="font-semibold tracking-tight hover:opacity-80">
-              ♟ Chess Tools
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 h-16 flex items-center gap-4 text-sm">
+            <Link to="/" className="text-lg font-semibold tracking-tight hover:opacity-80">
+              ♟ Chesslytics
             </Link>
             <div className="flex items-center gap-3 ml-auto">
               <Link
