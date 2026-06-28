@@ -251,6 +251,12 @@ function RatingPage() {
     return calculateRating(ratingForCalc, ratedGames);
   }, [used, currentRatingUsed, mode, manualCurrentRating]);
 
+  const currentRating =
+    mode === "manual"
+      ? Number(manualCurrentRating) || null
+      : currentRatingUsed;
+
+
   const updateRow = (idx: number, patch: Partial<GameRow>) => {
     setUsed((prev) => prev.map((u, i) => (i === idx ? { ...u, ...patch } : u)));
   };
