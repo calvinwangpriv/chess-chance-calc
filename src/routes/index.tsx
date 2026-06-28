@@ -401,7 +401,7 @@ function Index() {
                 </h2>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6">
 
               <div
                 className="rounded-xl border border-accent/40 p-3 sm:p-4 flex gap-3 items-start"
@@ -421,8 +421,8 @@ function Index() {
               {result.outcomes.map((o) => {
                 const s = outcomeStyles[o.outcome];
                 return (
-                  <div key={o.outcome} className={`rounded-xl border border-border/60 p-4 ring-1 ${s.ring} bg-card`}>
-                    <div className="flex items-center justify-between mb-3">
+                  <div key={o.outcome} className={`rounded-xl border border-border/60 p-3 sm:p-4 ring-1 ${s.ring} bg-card`}>
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
                       <h2 className="font-semibold text-base flex items-center gap-2">
                         <span className="text-xl">{s.icon}</span>
                         If you {o.outcome.toLowerCase()}:
