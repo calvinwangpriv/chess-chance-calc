@@ -68,13 +68,113 @@ function findHeaderIndex(headers: string[], patterns: RegExp[]): number {
   return -1;
 }
 
+function extractChessRosterId(url: string): string | null {
+  const apiMatch = url.match(/chessroster\.com\/api\/tournaments\/([^/?#]+)/i);
+  if (apiMatch) return apiMatch[1];
+  const pageMatch = url.match(/chessroster\.com\/(?:t|tournaments)\/([^/?#]+)/i);
+  if (pageMatch) return pageMatch[1];
+  return null;
+}
+
+type CRPlayer = {
+  id1?: string;
+  name: string;
+  rating?: number;
+  score?: number;
+  pair_number: number;
+  ops?: number[];
+  results?: string[];
+  colors?: string[];
+};
+type CRSection = {
+  section?: string;
+  players?: CRPlayer[];
+  rounds_paired?: number;
+  rounds_played?: number;
+};
+
+async function fetchChessRoster(
+  id: string,
+): Promise<{ players: StandingsPlayer[]; totalRounds: number }> {
+  const apiUrl = `https://www.chessroster.com/api/tournaments/${encodeURIComponent(id)}/reports`;
+  const res = await fetch(apiUrl, {
+    headers: { "User-Agent": "Mozilla/5.0 ChessToolsBot", Accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`Failed to fetch ChessRoster (HTTP ${res.status})`);
+  const json = (await res.json()) as { swisssysReport?: { sections?: CRSection[] } };
+  const sections = json.swisssysReport?.sections ?? [];
+  if (!sections.length) throw new Error("ChessRoster response has no sections.");
+
+  const normResult = (r: string): StandingsResult => {
+    const s = (r || "").toUpperCase();
+    if (s === "W" || s === "L" || s === "D" || s === "B" || s === "H" || s === "F" || s === "U") {
+      return s as StandingsResult;
+    }
+    if (s === "X") return "W";
+    return "U";
+  };
+  const normColor = (c: string): "W" | "B" | null => {
+    const s = (c || "").toUpperCase();
+    return s === "W" || s === "B" ? s : null;
+  };
+
+  const out: StandingsPlayer[] = [];
+  let totalRounds = 0;
+  let offset = 0;
+  for (const sec of sections) {
+    const secPlayers = sec.players ?? [];
+    const secRounds = sec.rounds_paired ?? sec.rounds_played ?? 0;
+    if (secRounds > totalRounds) totalRounds = secRounds;
+    for (const p of secPlayers) {
+      const ops = p.ops ?? [];
+      const results = p.results ?? [];
+      const colors = p.colors ?? [];
+      const games: StandingsGame[] = [];
+      const rounds = Math.max(ops.length, results.length);
+      for (let i = 0; i < rounds; i++) {
+        const rLetter = (results[i] ?? "").toUpperCase();
+        if (!rLetter || rLetter === "U") continue;
+        const oppPair = ops[i];
+        const noOpp =
+          !oppPair ||
+          oppPair === 0 ||
+          rLetter === "B" ||
+          rLetter === "H" ||
+          rLetter === "X" ||
+          rLetter === "F";
+        games.push({
+          round: i + 1,
+          opponentPairing: noOpp ? null : offset + oppPair,
+          result: normResult(rLetter),
+          color: normColor(colors[i] ?? ""),
+        });
+      }
+      const idRaw = String(p.id1 ?? "").replace(/\D/g, "");
+      out.push({
+        pairingNumber: offset + p.pair_number,
+        name: p.name,
+        uscfId: idRaw.length >= 6 ? idRaw : null,
+        rating: p.rating && p.rating > 0 ? p.rating : null,
+        score: Number(p.score ?? 0) || 0,
+        games,
+      });
+    }
+    offset += secPlayers.length;
+  }
+  return { players: out, totalRounds };
+}
+
 export const scrapeStandings = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
   .handler(async ({ data }): Promise<{ players: StandingsPlayer[]; totalRounds: number }> => {
+    const crId = extractChessRosterId(data.url);
+    if (crId) return fetchChessRoster(crId);
+
     const res = await fetch(data.url, {
       headers: { "User-Agent": "Mozilla/5.0 ChessToolsBot" },
     });
     if (!res.ok) throw new Error(`Failed to fetch page (HTTP ${res.status})`);
+
     const html = await res.text();
     const parsed = parseTable(html);
     if (!parsed) throw new Error("No table found on that page.");
