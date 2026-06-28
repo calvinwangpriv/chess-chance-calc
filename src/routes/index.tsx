@@ -148,7 +148,9 @@ function Index() {
         [p[0][0], p[0][1], p[0][2]],
         [p[1][0], p[1][1], p[1][2]],
         p[2],
+        p[3] ?? null,
       ]);
+
       const g = next[i];
       const ratingVal = value.trim() === "" ? null : Number(value);
       if (field === "wn") g[0][0] = value;
@@ -252,8 +254,9 @@ function Index() {
                         {i + 1}
                       </span>
                       <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                        Board {i + 1}
+                        Board {p[3] ?? "?"}
                       </span>
+
                     </div>
 
                     <div>
