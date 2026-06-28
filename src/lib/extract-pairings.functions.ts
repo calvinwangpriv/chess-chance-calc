@@ -7,7 +7,8 @@ const InputSchema = z.object({
 
 export type GameResult = "1-0" | "0-1" | "1/2" | null;
 export type PlayerEntry = [string, number, number | null];
-export type Pairing = [PlayerEntry, PlayerEntry, GameResult];
+export type Pairing = [PlayerEntry, PlayerEntry, GameResult, number | null];
+
 
 export const extractPairings = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
@@ -16,7 +17,9 @@ export const extractPairings = createServerFn({ method: "POST" })
     if (!key) throw new Error("Missing OPENAI_API_KEY");
 
     const systemPrompt = `You are given an image of a chess tournament pairing sheet (SwissSys format).
-Columns: Bd (board), # (white player number), Res (white result), White (name and "(RATING SCORE)"), # (black number), Res (black result), Black (name and "(RATING SCORE)").
+Columns: Bd (board number, leftmost column), # (white player number), Res (white result), White (name and "(RATING SCORE)"), # (black number), Res (black result), Black (name and "(RATING SCORE)").
+
+The "Bd" column at the far left is the board number for that pairing (e.g. 55). Capture it as an integer.
 
 In the player cell, the parentheses contain the player's USCF RATING then their SCORE before this round, e.g. "Marcus Chen (1845 4.5)" → rating 1845, score 4.5. If the rating shows "UNR" or is missing, return null for rating.
 
@@ -27,7 +30,7 @@ The "Res" columns show the result of THIS round's game if it has finished:
 - blank/empty means the game is still ongoing (no result yet)
 
 Return STRICT JSON only (no markdown, no commentary) of shape:
-{"pairings":[{"white":{"name":"...","score":0.0,"rating":1800},"black":{"name":"...","score":0.0,"rating":1750},"result":"1-0"|"0-1"|"1/2"|null}, ...]}
+{"pairings":[{"board":55,"white":{"name":"...","score":0.0,"rating":1800},"black":{"name":"...","score":0.0,"rating":1750},"result":"1-0"|"0-1"|"1/2"|null}, ...]}
 
 "result" rules:
 - "1-0" if white's Res is 1 (or black's Res is 0)
@@ -35,7 +38,8 @@ Return STRICT JSON only (no markdown, no commentary) of shape:
 - "1/2" if either Res cell shows ½/0.5
 - null if both Res cells are blank (game ongoing)
 
-Keep player names exactly as shown including titles ("WCM Lilian Wang") and annotations ("Jude Bae* Torrens r/e"), but without the "(RATING SCORE)" part. Skip bye rows.`;
+Keep player names exactly as shown including titles ("WCM Lilian Wang") and annotations ("Jude Bae* Torrens r/e"), but without the "(RATING SCORE)" part. Skip bye rows. If a board number is unreadable, return null for that pairing's board.`;
+
 
     const body = {
       model: "gpt-4o",
@@ -93,11 +97,19 @@ Keep player names exactly as shown including titles ("WCM Lilian Wang") and anno
       return Number.isFinite(n) && n > 0 ? n : null;
     };
 
+    const normBoard = (b: any): number | null => {
+      if (b === null || b === undefined || b === "") return null;
+      const n = Number(String(b).replace(/[^\d]/g, ""));
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+
     const pairings: Pairing[] = (parsed.pairings ?? []).map((p: any) => [
       [String(p.white?.name ?? "").trim(), Number(p.white?.score ?? 0), normRating(p.white?.rating)],
       [String(p.black?.name ?? "").trim(), Number(p.black?.score ?? 0), normRating(p.black?.rating)],
       normResult(p.result),
+      normBoard(p.board),
     ]);
+
 
     return { pairings };
   });
