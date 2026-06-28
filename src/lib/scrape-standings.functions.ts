@@ -70,7 +70,7 @@ function findHeaderIndex(headers: string[], patterns: RegExp[]): number {
 
 export const scrapeStandings = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
-  .handler(async ({ data }): Promise<{ players: StandingsPlayer[] }> => {
+  .handler(async ({ data }): Promise<{ players: StandingsPlayer[]; totalRounds: number }> => {
     const res = await fetch(data.url, {
       headers: { "User-Agent": "Mozilla/5.0 ChessToolsBot" },
     });
@@ -112,5 +112,6 @@ export const scrapeStandings = createServerFn({ method: "POST" })
       players.push({ pairingNumber: pair, name, uscfId, rating, score, games });
     }
 
-    return { players };
+    const totalRounds = roundIdxs.reduce((m, r) => Math.max(m, r.round), 0);
+    return { players, totalRounds };
   });
