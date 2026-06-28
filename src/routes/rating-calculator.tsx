@@ -227,8 +227,9 @@ function RatingPage() {
         handledRounds.add(g.round);
       }
 
-      // Add placeholder rows for any rounds not yet played
-      for (let r = 1; r <= totalRounds; r++) {
+      // Add placeholder rows for any rounds not yet played (use this player's section round count)
+      const roundsForMe = me.sectionRounds ?? totalRounds;
+      for (let r = 1; r <= roundsForMe; r++) {
         if (!handledRounds.has(r)) {
           usedRows.push({
             round: r,
@@ -239,6 +240,7 @@ function RatingPage() {
           });
         }
       }
+
       usedRows.sort((a, b) => a.round - b.round);
 
       const myLive = me.uscfId ? ratingMap[me.uscfId]?.liveRating : null;
