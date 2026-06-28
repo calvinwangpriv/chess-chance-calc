@@ -74,7 +74,9 @@ function RatingPage() {
         toast.error("Could not read any players from that page.");
       } else {
         setPlayers(players);
-        setResult(null);
+        setUsed([]);
+        setSkipped([]);
+        setCurrentRatingUsed(null);
         setLiveRatings({});
         toast.success(`Loaded ${players.length} players.`);
       }
