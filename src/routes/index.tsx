@@ -192,24 +192,24 @@ function Index() {
       <main className="mx-auto max-w-5xl px-2 sm:px-4 py-4 sm:py-7 space-y-4">
         <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
           <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
-          <CardHeader>
-            <CardTitle className="text-lg">
+          <CardHeader className="px-3 py-3 sm:px-5 sm:py-4">
+            <CardTitle className="text-base">
               <h2 className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-sm font-bold">1</span>
-                <Upload className="h-5 w-5 text-primary" /> Upload pairing sheet
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-xs font-bold">1</span>
+                <Upload className="h-4 w-4 text-primary" /> Upload pairing sheet
               </h2>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 px-3 pb-3 sm:px-5 sm:pb-5">
             <div>
-              <Label htmlFor="pairing-image">Pairing sheet image</Label>
+              <Label htmlFor="pairing-image" className="text-xs sm:text-sm">Pairing sheet image</Label>
               <Input
                 id="pairing-image"
                 type="file"
                 accept="image/*"
                 aria-label="Upload pairing sheet image"
                 onChange={(e) => onFile(e.target.files?.[0] ?? null)}
-                className="cursor-pointer mt-1"
+                className="cursor-pointer mt-1 h-8 px-2 text-xs sm:h-9 sm:text-sm file:text-xs sm:file:text-sm"
               />
             </div>
             {imagePreview && (
@@ -222,25 +222,28 @@ function Index() {
             <Button
               onClick={runExtract}
               disabled={busy || !imageFile}
-              className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02]"
+              size="sm"
+              className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02] text-xs sm:text-sm"
               style={{ background: "var(--gradient-hero)" }}
             >
               {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Extract pairings with AI
             </Button>
           </CardContent>
+
         </Card>
 
         {pairings.length > 0 && (
           <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
             <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
             <CardHeader className="px-3 py-3 sm:px-5 sm:py-4">
-              <CardTitle className="text-lg">
+              <CardTitle className="text-base">
                 <h2 className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-sm font-bold">2</span>
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-xs font-bold">2</span>
                   Verify extracted pairings ({pairings.length})
                 </h2>
               </CardTitle>
+
             </CardHeader>
             <CardContent className="px-2 pb-3 sm:px-5 sm:pb-5">
               <div className="space-y-2">
@@ -344,26 +347,26 @@ function Index() {
           <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
             <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
             <CardHeader className="px-3 py-3 sm:px-5 sm:py-4">
-              <CardTitle className="text-lg">
+              <CardTitle className="text-base">
                 <h2 className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-sm font-bold">3</span>
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary text-xs font-bold">3</span>
                   Prize list &amp; your name
                 </h2>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 px-3 pb-3 sm:px-5 sm:pb-5">
               <div>
-                <Label htmlFor="prizes">Prize list (1st, 2nd, 3rd, …)</Label>
+                <Label htmlFor="prizes" className="text-xs sm:text-sm">Prize list (1st, 2nd, 3rd, …)</Label>
                 <Input
                   id="prizes"
                   value={prizes}
                   onChange={(e) => setPrizes(e.target.value)}
                   placeholder="Ex: 12000, 6000, 3000, 1500, 1000, 800, 600, 500, 400, 400"
-                  className="mt-1"
+                  className="mt-1 h-8 px-2 text-xs sm:h-9 sm:text-sm"
                 />
               </div>
               <div>
-                <Label htmlFor="class-prizes">
+                <Label htmlFor="class-prizes" className="text-xs sm:text-sm">
                   Subsection prize list (optional)
                 </Label>
                 <Textarea
@@ -371,30 +374,32 @@ function Index() {
                   value={classPrizesText}
                   onChange={(e) => setClassPrizesText(e.target.value)}
                   placeholder={"Ex: U2000: 600, 400, 200\nU1800: 500, 300"}
-                  className="mt-1"
+                  className="mt-1 px-2 py-1.5 text-xs sm:text-sm min-h-0"
                   rows={Math.max(1, classPrizesText.split("\n").length)}
                 />
               </div>
               <div>
-                <Label htmlFor="player">Your name</Label>
+                <Label htmlFor="player" className="text-xs sm:text-sm">Your name</Label>
                 <Input
                   id="player"
                   value={targetPlayer}
                   onChange={(e) => setTargetPlayer(e.target.value)}
-                  className="mt-1"
+                  className="mt-1 h-8 px-2 text-xs sm:h-9 sm:text-sm"
                   autoComplete="off"
                 />
               </div>
               <Button
                 onClick={runCalc}
                 disabled={!pairings.length || calcBusy}
-                className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02] disabled:opacity-70 disabled:hover:scale-100"
+                size="sm"
+                className="text-primary-foreground border-0 shadow-[var(--shadow-elegant)] hover:opacity-90 transition-all hover:scale-[1.02] disabled:opacity-70 disabled:hover:scale-100 text-xs sm:text-sm"
                 style={{ background: "var(--gradient-hero)" }}
               >
                 {calcBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Calculator className="mr-2 h-4 w-4" />}
                 {calcBusy ? "Calculating…" : "Calculate odds"}
               </Button>
             </CardContent>
+
           </Card>
         )}
 
@@ -402,12 +407,13 @@ function Index() {
           <Card className="mx-auto w-full max-w-[30rem] border-border/60 shadow-[var(--shadow-elegant)] overflow-hidden">
             <div className="h-1.5" style={{ background: "var(--gradient-hero)" }} />
             <CardHeader className="px-2.5 py-2 sm:px-4 sm:py-3">
-              <CardTitle className="text-lg">
+              <CardTitle className="text-base">
                 <h2 className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-accent" />
+                  <Trophy className="h-4 w-4 text-accent" />
                   Results
                 </h2>
               </CardTitle>
+
             </CardHeader>
             <CardContent className="space-y-2 px-2 pb-2 sm:px-4 sm:pb-4">
 
