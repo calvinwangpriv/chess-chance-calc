@@ -38,15 +38,6 @@ export const Route = createFileRoute("/rating-calculator")({
   component: RatingPage,
 });
 
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result as string);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-}
-
 function resultToScore(r: string): number | null {
   if (r === "W" || r === "B") return 1;
   if (r === "D" || r === "H") return 0.5;
@@ -59,14 +50,13 @@ function normName(s: string) {
 }
 
 function RatingPage() {
-  const extract = useServerFn(extractStandings);
+  const scrape = useServerFn(scrapeStandings);
   const fetchRatings = useServerFn(fetchUscfRatings);
 
-  const [files, setFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
+  const [url, setUrl] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [players, setPlayers] = useState<StandingsPlayer[]>([]);
-  const [liveRatings, setLiveRatings] = useState<Record<string, LiveRatingInfo>>({});
+  const [, setLiveRatings] = useState<Record<string, LiveRatingInfo>>({});
   const [result, setResult] = useState<{
     calc: RatingCalc;
     used: { opponent: string; opponentRating: number; score: number; source: "live" | "official" }[];
@@ -76,35 +66,21 @@ function RatingPage() {
   const [busy, setBusy] = useState(false);
   const [calcBusy, setCalcBusy] = useState(false);
 
-  const onFiles = async (list: FileList | null) => {
-    if (!list) return;
-    const arr = Array.from(list);
-    setFiles(arr);
-    setResult(null);
-    setPlayers([]);
-    setLiveRatings({});
-    const previews = await Promise.all(arr.map(fileToDataUrl));
-    setPreviews(previews);
-  };
-
-  const removeFile = (i: number) => {
-    setFiles((p) => p.filter((_, idx) => idx !== i));
-    setPreviews((p) => p.filter((_, idx) => idx !== i));
-  };
-
   const runExtract = async () => {
-    if (!previews.length) return toast.error("Please upload at least one standings image.");
+    if (!url.trim()) return toast.error("Please paste a standings URL.");
     setBusy(true);
     try {
-      const { players } = await extract({ data: { imageDataUrls: previews } });
+      const { players } = await scrape({ data: { url: url.trim() } });
       if (!players.length) {
-        toast.error("Could not read any players from the images.");
+        toast.error("Could not read any players from that page.");
       } else {
         setPlayers(players);
-        toast.success(`Extracted ${players.length} players.`);
+        setResult(null);
+        setLiveRatings({});
+        toast.success(`Loaded ${players.length} players.`);
       }
     } catch (e: any) {
-      toast.error(e?.message ?? "Extraction failed.");
+      toast.error(e?.message ?? "Scrape failed.");
     } finally {
       setBusy(false);
     }
