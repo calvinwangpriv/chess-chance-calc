@@ -49,8 +49,29 @@ function resultToScore(r: string): number | null {
 }
 
 function normName(s: string) {
-  return s.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+  return s.toLowerCase().replace(/[^a-z0-9 ,]/g, "").replace(/\s+/g, " ").trim();
 }
+
+/** Generate candidate forms for a name so "First Last" matches "LAST, FIRST". */
+function nameForms(s: string): string[] {
+  const base = normName(s).replace(/,/g, " ").replace(/\s+/g, " ").trim();
+  const parts = base.split(" ").filter(Boolean);
+  const forms = new Set<string>();
+  forms.add(base);
+  if (parts.length >= 2) {
+    // last-first and first-last permutations
+    forms.add([parts[parts.length - 1], ...parts.slice(0, -1)].join(" "));
+    forms.add([...parts.slice(1), parts[0]].join(" "));
+  }
+  return [...forms];
+}
+
+function nameMatches(playerName: string, query: string): boolean {
+  const qForms = nameForms(query);
+  const pForms = nameForms(playerName);
+  return qForms.some((q) => pForms.some((p) => p === q || p.includes(q) || q.includes(p)));
+}
+
 
 function ratingColor(delta: number | undefined): {
   text: string;
