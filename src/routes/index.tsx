@@ -256,14 +256,37 @@ function Index() {
                       </span>
                     </div>
 
-                    {/* Row 1: White name | Result | Black name */}
-                    <div className="grid grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)] gap-2 items-center">
-                      <Input
-                        aria-label={`Board ${i + 1} white player name`}
-                        placeholder="White"
-                        value={p[0][0]}
-                        onChange={(e) => updatePairing(i, "wn", e.target.value)}
-                      />
+                    {/* Mobile: stacked white/black with result between. sm+: side-by-side */}
+                    <div className="space-y-2 sm:hidden">
+                      {/* White */}
+                      <div className="rounded-md bg-muted/30 p-2 space-y-2">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">White</div>
+                        <Input
+                          aria-label={`Board ${i + 1} white player name`}
+                          placeholder="Name"
+                          value={p[0][0]}
+                          onChange={(e) => updatePairing(i, "wn", e.target.value)}
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            aria-label={`Board ${i + 1} white rating`}
+                            type="number"
+                            placeholder="Rating"
+                            value={p[0][2] ?? ""}
+                            onChange={(e) => updatePairing(i, "wr", e.target.value)}
+                          />
+                          <Input
+                            aria-label={`Board ${i + 1} white score`}
+                            type="number"
+                            step="0.5"
+                            placeholder="Score"
+                            value={p[0][1]}
+                            onChange={(e) => updatePairing(i, "ws", e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Result */}
                       <Select
                         value={p[2] ?? "none"}
                         onValueChange={(v) => updatePairing(i, "res", v)}
@@ -278,50 +301,102 @@ function Index() {
                           <SelectItem value="0-1">0-1</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Input
-                        aria-label={`Board ${i + 1} black player name`}
-                        placeholder="Black"
-                        value={p[1][0]}
-                        onChange={(e) => updatePairing(i, "bn", e.target.value)}
-                      />
+
+                      {/* Black */}
+                      <div className="rounded-md bg-muted/30 p-2 space-y-2">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Black</div>
+                        <Input
+                          aria-label={`Board ${i + 1} black player name`}
+                          placeholder="Name"
+                          value={p[1][0]}
+                          onChange={(e) => updatePairing(i, "bn", e.target.value)}
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            aria-label={`Board ${i + 1} black rating`}
+                            type="number"
+                            placeholder="Rating"
+                            value={p[1][2] ?? ""}
+                            onChange={(e) => updatePairing(i, "br", e.target.value)}
+                          />
+                          <Input
+                            aria-label={`Board ${i + 1} black score`}
+                            type="number"
+                            step="0.5"
+                            placeholder="Score"
+                            value={p[1][1]}
+                            onChange={(e) => updatePairing(i, "bs", e.target.value)}
+                          />
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Row 2: White rating + score | spacer | Black rating + score */}
-                    <div className="grid grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)] gap-2 mt-2">
-                      <div className="grid grid-cols-2 gap-2">
+                    {/* sm+: side-by-side */}
+                    <div className="hidden sm:block">
+                      <div className="grid grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)] gap-2 items-center">
                         <Input
-                          aria-label={`Board ${i + 1} white rating`}
-                          type="number"
-                          placeholder="Rating"
-                          value={p[0][2] ?? ""}
-                          onChange={(e) => updatePairing(i, "wr", e.target.value)}
+                          aria-label={`Board ${i + 1} white player name (desktop)`}
+                          placeholder="White"
+                          value={p[0][0]}
+                          onChange={(e) => updatePairing(i, "wn", e.target.value)}
                         />
+                        <Select
+                          value={p[2] ?? "none"}
+                          onValueChange={(v) => updatePairing(i, "res", v)}
+                        >
+                          <SelectTrigger aria-label={`Board ${i + 1} result (desktop)`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">---</SelectItem>
+                            <SelectItem value="1-0">1-0</SelectItem>
+                            <SelectItem value="1/2">0.5-0.5</SelectItem>
+                            <SelectItem value="0-1">0-1</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <Input
-                          aria-label={`Board ${i + 1} white score`}
-                          type="number"
-                          step="0.5"
-                          placeholder="Score"
-                          value={p[0][1]}
-                          onChange={(e) => updatePairing(i, "ws", e.target.value)}
+                          aria-label={`Board ${i + 1} black player name (desktop)`}
+                          placeholder="Black"
+                          value={p[1][0]}
+                          onChange={(e) => updatePairing(i, "bn", e.target.value)}
                         />
                       </div>
-                      <div />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          aria-label={`Board ${i + 1} black rating`}
-                          type="number"
-                          placeholder="Rating"
-                          value={p[1][2] ?? ""}
-                          onChange={(e) => updatePairing(i, "br", e.target.value)}
-                        />
-                        <Input
-                          aria-label={`Board ${i + 1} black score`}
-                          type="number"
-                          step="0.5"
-                          placeholder="Score"
-                          value={p[1][1]}
-                          onChange={(e) => updatePairing(i, "bs", e.target.value)}
-                        />
+                      <div className="grid grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)] gap-2 mt-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            aria-label={`Board ${i + 1} white rating (desktop)`}
+                            type="number"
+                            placeholder="Rating"
+                            value={p[0][2] ?? ""}
+                            onChange={(e) => updatePairing(i, "wr", e.target.value)}
+                          />
+                          <Input
+                            aria-label={`Board ${i + 1} white score (desktop)`}
+                            type="number"
+                            step="0.5"
+                            placeholder="Score"
+                            value={p[0][1]}
+                            onChange={(e) => updatePairing(i, "ws", e.target.value)}
+                          />
+                        </div>
+                        <div />
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            aria-label={`Board ${i + 1} black rating (desktop)`}
+                            type="number"
+                            placeholder="Rating"
+                            value={p[1][2] ?? ""}
+                            onChange={(e) => updatePairing(i, "br", e.target.value)}
+                          />
+                          <Input
+                            aria-label={`Board ${i + 1} black score (desktop)`}
+                            type="number"
+                            step="0.5"
+                            placeholder="Score"
+                            value={p[1][1]}
+                            onChange={(e) => updatePairing(i, "bs", e.target.value)}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
