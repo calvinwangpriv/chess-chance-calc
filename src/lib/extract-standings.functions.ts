@@ -67,6 +67,7 @@ Rules:
 
     const body = {
       model: "gpt-4o",
+      max_tokens: 16000,
       messages: [
         { role: "system", content: systemPrompt },
         {
