@@ -481,11 +481,7 @@ function RatingPage() {
                   label="Performance"
                   value={calc?.performanceRating?.toString() ?? "—"}
                   accent
-                  delta={
-                    calc?.performanceRating != null && currentRating != null
-                      ? calc.performanceRating - currentRating
-                      : undefined
-                  }
+                  delta={perfDelta}
                 />
                 <Stat
                   label="Projected new rating"
@@ -496,11 +492,7 @@ function RatingPage() {
                       ? `${calc.ratingChange >= 0 ? "+" : ""}${calc.ratingChange}`
                       : undefined
                   }
-                  delta={
-                    calc != null && currentRating != null
-                      ? calc.newRating - currentRating
-                      : undefined
-                  }
+                  delta={perfDelta}
                 />
               </div>
 
