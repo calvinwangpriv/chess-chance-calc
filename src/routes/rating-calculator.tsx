@@ -18,7 +18,7 @@ import {
 import { type StandingsPlayer } from "@/lib/extract-standings.functions";
 import { scrapeStandings } from "@/lib/scrape-standings.functions";
 import { fetchUscfRatings, type LiveRatingInfo } from "@/lib/fetch-uscf-ratings.functions";
-import { calculateRating, type RatedGame, type RatingCalc } from "@/lib/calculate-rating";
+import { calculateRating } from "@/lib/calculate-rating";
 
 export const Route = createFileRoute("/rating-calculator")({
   head: () => ({
@@ -57,12 +57,11 @@ function RatingPage() {
   const [playerName, setPlayerName] = useState("");
   const [players, setPlayers] = useState<StandingsPlayer[]>([]);
   const [, setLiveRatings] = useState<Record<string, LiveRatingInfo>>({});
-  const [result, setResult] = useState<{
-    calc: RatingCalc;
-    used: { opponent: string; opponentRating: number; score: number; source: "live" | "official" }[];
-    skipped: { opponent: string; reason: string }[];
-    currentRatingUsed: number;
-  } | null>(null);
+  const [used, setUsed] = useState<
+    { round: number; opponent: string; opponentRating: number; score: number }[]
+  >([]);
+  const [skipped, setSkipped] = useState<{ opponent: string; reason: string }[]>([]);
+  const [currentRatingUsed, setCurrentRatingUsed] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [calcBusy, setCalcBusy] = useState(false);
 
@@ -75,7 +74,9 @@ function RatingPage() {
         toast.error("Could not read any players from that page.");
       } else {
         setPlayers(players);
-        setResult(null);
+        setUsed([]);
+        setSkipped([]);
+        setCurrentRatingUsed(null);
         setLiveRatings({});
         toast.success(`Loaded ${players.length} players.`);
       }
@@ -123,38 +124,36 @@ function RatingPage() {
         setLiveRatings(ratingMap);
       }
 
-      const used: { opponent: string; opponentRating: number; score: number; source: "live" | "official" }[] = [];
-      const skipped: { opponent: string; reason: string }[] = [];
-      const ratedGames: RatedGame[] = [];
+      const usedRows: { round: number; opponent: string; opponentRating: number; score: number }[] = [];
+      const skippedRows: { opponent: string; reason: string }[] = [];
 
       for (const g of me.games) {
         const score = resultToScore(g.result);
         if (score == null) continue; // unplayed / bye
         if (g.opponentPairing == null) {
-          skipped.push({ opponent: `Round ${g.round}`, reason: "bye / forfeit (not rated)" });
+          skippedRows.push({ opponent: `Round ${g.round}`, reason: "bye / forfeit (not rated)" });
           continue;
         }
         const opp = byPair.get(g.opponentPairing);
         if (!opp) {
-          skipped.push({ opponent: `#${g.opponentPairing}`, reason: "opponent not found in standings" });
+          skippedRows.push({ opponent: `#${g.opponentPairing}`, reason: "opponent not found in standings" });
           continue;
         }
         const live = opp.uscfId ? ratingMap[opp.uscfId]?.liveRating : null;
         const rating = live ?? opp.rating;
         if (rating == null) {
-          skipped.push({ opponent: opp.name, reason: "no rating available" });
+          skippedRows.push({ opponent: opp.name, reason: "no rating available" });
           continue;
         }
-        ratedGames.push({ opponentRating: rating, score, opponentName: opp.name });
-        used.push({
+        usedRows.push({
+          round: g.round,
           opponent: opp.name,
           opponentRating: rating,
           score,
-          source: live != null ? "live" : "official",
         });
       }
 
-      if (!ratedGames.length) {
+      if (!usedRows.length) {
         toast.error("No rated games available to compute a rating.");
         setCalcBusy(false);
         return;
@@ -162,13 +161,26 @@ function RatingPage() {
 
       const myLive = me.uscfId ? ratingMap[me.uscfId]?.liveRating : null;
       const currentRating = myLive ?? me.rating ?? 1500;
-      const calc = calculateRating(currentRating, ratedGames);
-      setResult({ calc, used, skipped, currentRatingUsed: currentRating });
+      setUsed(usedRows);
+      setSkipped(skippedRows);
+      setCurrentRatingUsed(currentRating);
     } catch (e: any) {
       toast.error(e?.message ?? "Calculation failed.");
     } finally {
       setCalcBusy(false);
     }
+  };
+
+  const calc = useMemo(() => {
+    if (currentRatingUsed == null || used.length === 0) return null;
+    return calculateRating(
+      currentRatingUsed,
+      used.map((u) => ({ opponentRating: u.opponentRating, score: u.score, opponentName: u.opponent })),
+    );
+  }, [used, currentRatingUsed]);
+
+  const updateScore = (idx: number, score: number) => {
+    setUsed((prev) => prev.map((u, i) => (i === idx ? { ...u, score } : u)));
   };
 
   return (
@@ -290,7 +302,7 @@ function RatingPage() {
         )}
 
         {/* Step 3: result */}
-        {result && (
+        {calc && currentRatingUsed != null && (
           <Card className="border-border/60 shadow-[var(--shadow-elegant)] overflow-hidden">
             <div className="h-1.5" style={{ background: "var(--gradient-hero)" }} />
             <CardHeader className="px-3 py-3 sm:px-5 sm:py-4">
@@ -302,27 +314,19 @@ function RatingPage() {
             </CardHeader>
             <CardContent className="space-y-4 px-3 pb-3 sm:px-5 sm:pb-5">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <Stat label="Current rating" value={result.currentRatingUsed.toString()} />
+                <Stat label="Current rating" value={currentRatingUsed.toString()} />
+                <Stat label="Avg opp rating" value={calc.avgOpponentRating.toString()} />
                 <Stat
                   label="Performance"
-                  value={result.calc.performanceRating?.toString() ?? "—"}
+                  value={calc.performanceRating?.toString() ?? "—"}
                   accent
                 />
                 <Stat
                   label="Projected new rating"
-                  value={result.calc.newRating.toString()}
+                  value={calc.newRating.toString()}
                   accent
-                  sub={`${result.calc.ratingChange >= 0 ? "+" : ""}${result.calc.ratingChange}`}
+                  sub={`${calc.ratingChange >= 0 ? "+" : ""}${calc.ratingChange}`}
                 />
-                <Stat
-                  label="Score / Expected"
-                  value={`${result.calc.totalScore} / ${result.calc.expectedScore.toFixed(2)}`}
-                />
-              </div>
-
-              <div className="text-xs text-muted-foreground">
-                K = {result.calc.kFactor.toFixed(1)} · Bonus applied: {result.calc.bonusApplied} ·
-                Avg opp rating: {result.calc.avgOpponentRating} · Games used: {result.calc.gamesUsed}
               </div>
 
               <div>
@@ -331,24 +335,29 @@ function RatingPage() {
                   <table className="w-full text-xs sm:text-sm">
                     <thead className="bg-muted/50 text-muted-foreground">
                       <tr>
+                        <th className="text-left px-2 py-1.5">Round</th>
                         <th className="text-left px-2 py-1.5">Opponent</th>
                         <th className="text-right px-2 py-1.5">Rating</th>
-                        <th className="text-right px-2 py-1.5">Source</th>
                         <th className="text-right px-2 py-1.5">Score</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {result.used.map((g, i) => (
+                      {used.map((g, i) => (
                         <tr key={i} className="border-t border-border/40">
+                          <td className="px-2 py-1.5 tabular-nums">{g.round}</td>
                           <td className="px-2 py-1.5">{g.opponent}</td>
                           <td className="px-2 py-1.5 text-right tabular-nums">{g.opponentRating}</td>
-                          <td className="px-2 py-1.5 text-right text-xs">
-                            <span className={g.source === "live" ? "text-success" : "text-muted-foreground"}>
-                              {g.source}
-                            </span>
-                          </td>
-                          <td className="px-2 py-1.5 text-right tabular-nums">
-                            {g.score === 1 ? "1" : g.score === 0 ? "0" : "½"}
+                          <td className="px-2 py-1.5 text-right">
+                            <select
+                              value={String(g.score)}
+                              onChange={(e) => updateScore(i, parseFloat(e.target.value))}
+                              className="h-7 rounded-md border border-border/60 bg-background px-1.5 text-xs tabular-nums"
+                              aria-label={`Round ${g.round} score`}
+                            >
+                              <option value="1">1</option>
+                              <option value="0.5">½</option>
+                              <option value="0">0</option>
+                            </select>
                           </td>
                         </tr>
                       ))}
@@ -357,23 +366,16 @@ function RatingPage() {
                 </div>
               </div>
 
-              {result.skipped.length > 0 && (
+              {skipped.length > 0 && (
                 <div className="text-xs text-muted-foreground">
                   <span className="font-semibold">Skipped:</span>{" "}
-                  {result.skipped.map((s, i) => (
+                  {skipped.map((s, i) => (
                     <span key={i}>
-                      {s.opponent} ({s.reason}){i < result.skipped.length - 1 ? "; " : ""}
+                      {s.opponent} ({s.reason}){i < skipped.length - 1 ? "; " : ""}
                     </span>
                   ))}
                 </div>
               )}
-
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Performance rating is the rating at which your expected score equals your actual score
-                (USCF/FIDE iterative method). Projected new rating uses the USCF standard formula with
-                bonus constant set to 10. Live ratings are pulled from the USCF ratings API; opponents
-                without a USCF ID fall back to the rating shown on the standings sheet.
-              </p>
             </CardContent>
           </Card>
         )}
