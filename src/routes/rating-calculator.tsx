@@ -256,6 +256,11 @@ function RatingPage() {
       ? Number(manualCurrentRating) || null
       : currentRatingUsed;
 
+  const perfDelta =
+    calc?.performanceRating != null && currentRating != null
+      ? calc.performanceRating - currentRating
+      : undefined;
+
 
   const updateRow = (idx: number, patch: Partial<GameRow>) => {
     setUsed((prev) => prev.map((u, i) => (i === idx ? { ...u, ...patch } : u)));
