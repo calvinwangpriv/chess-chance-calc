@@ -112,8 +112,34 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <div className="min-h-screen flex flex-col">
+        <nav className="border-b border-border/60 bg-card/60 backdrop-blur-sm sticky top-0 z-50">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 h-12 flex items-center gap-4 text-sm">
+            <Link to="/" className="font-semibold tracking-tight hover:opacity-80">
+              ♟ Chess Tools
+            </Link>
+            <div className="flex items-center gap-3 ml-auto">
+              <Link
+                to="/prize-calculator"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                activeProps={{ className: "text-foreground font-medium" }}
+              >
+                Prize odds
+              </Link>
+              <Link
+                to="/rating-calculator"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                activeProps={{ className: "text-foreground font-medium" }}
+              >
+                Rating
+              </Link>
+            </div>
+          </div>
+        </nav>
+        <div className="flex-1">
+          <Outlet />
+        </div>
+      </div>
     </QueryClientProvider>
   );
 }
