@@ -404,7 +404,7 @@ function Index() {
             <CardContent className="space-y-6">
 
               <div
-                className="rounded-xl border border-accent/40 p-4 flex gap-3 items-start"
+                className="rounded-xl border border-accent/40 p-3 sm:p-4 flex gap-3 items-start"
                 style={{ background: "color-mix(in oklab, var(--accent) 12%, var(--card))" }}
               >
                 <Crown className="h-5 w-5 text-accent shrink-0 mt-0.5" />
