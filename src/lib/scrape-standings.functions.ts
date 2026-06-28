@@ -157,7 +157,9 @@ async function fetchChessRoster(
         rating: p.rating && p.rating > 0 ? p.rating : null,
         score: Number(p.score ?? 0) || 0,
         games,
+        sectionRounds: secRounds,
       });
+
     }
     offset += secPlayers.length;
   }
