@@ -100,15 +100,46 @@ Rules:
       throw new Error(`AI extraction failed (${res.status}): ${txt}`);
     }
 
-    const json = (await res.json()) as { choices: { message: { content: string } }[] };
+    const json = (await res.json()) as { choices: { message: { content: string }; finish_reason?: string }[] };
     const content = json.choices?.[0]?.message?.content ?? "{}";
+
+    const repairTruncatedPlayers = (s: string): string | null => {
+      const pIdx = s.indexOf('"players"');
+      if (pIdx === -1) return null;
+      const arrStart = s.indexOf("[", pIdx);
+      if (arrStart === -1) return null;
+      let depth = 0, inStr = false, esc = false, lastObjEnd = -1;
+      for (let i = arrStart; i < s.length; i++) {
+        const ch = s[i];
+        if (inStr) {
+          if (esc) esc = false;
+          else if (ch === "\\") esc = true;
+          else if (ch === '"') inStr = false;
+          continue;
+        }
+        if (ch === '"') inStr = true;
+        else if (ch === "{" || ch === "[") depth++;
+        else if (ch === "}" || ch === "]") {
+          depth--;
+          if (depth === 1 && ch === "}") lastObjEnd = i;
+        }
+      }
+      if (lastObjEnd === -1) return s.slice(0, arrStart + 1) + "]}";
+      return s.slice(0, lastObjEnd + 1) + "]}";
+    };
+
     let parsed: any;
     try {
       parsed = JSON.parse(content);
     } catch {
-      const match = content.match(/\{[\s\S]*\}/);
-      parsed = match ? JSON.parse(match[0]) : { players: [] };
+      const repaired = repairTruncatedPlayers(content);
+      try {
+        parsed = repaired ? JSON.parse(repaired) : { players: [] };
+      } catch {
+        parsed = { players: [] };
+      }
     }
+
 
     const toInt = (v: any): number | null => {
       if (v === null || v === undefined || v === "") return null;
