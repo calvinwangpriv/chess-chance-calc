@@ -112,5 +112,6 @@ export const scrapeStandings = createServerFn({ method: "POST" })
       players.push({ pairingNumber: pair, name, uscfId, rating, score, games });
     }
 
-    return { players };
+    const totalRounds = roundIdxs.reduce((m, r) => Math.max(m, r.round), 0);
+    return { players, totalRounds };
   });
