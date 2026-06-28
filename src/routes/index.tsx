@@ -391,7 +391,7 @@ function Index() {
         )}
 
         {result && (
-          <Card className="border-border/60 shadow-[var(--shadow-elegant)] overflow-hidden">
+          <Card className="mx-auto w-full max-w-2xl border-border/60 shadow-[var(--shadow-elegant)] overflow-hidden">
             <div className="h-1.5" style={{ background: "var(--gradient-hero)" }} />
             <CardHeader>
               <CardTitle className="text-lg">
@@ -401,7 +401,7 @@ function Index() {
                 </h2>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 sm:space-y-6">
+            <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-5">
 
               <div
                 className="rounded-xl border border-accent/40 p-3 sm:p-4 flex gap-3 items-start"
@@ -421,13 +421,13 @@ function Index() {
               {result.outcomes.map((o) => {
                 const s = outcomeStyles[o.outcome];
                 return (
-                  <div key={o.outcome} className={`rounded-xl border border-border/60 p-3 sm:p-4 ring-1 ${s.ring} bg-card`}>
-                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <div key={o.outcome} className={`rounded-xl border border-border/60 p-2.5 sm:p-3 ring-1 ${s.ring} bg-card`}>
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 mb-2">
                       <h2 className="font-semibold text-base flex items-center gap-2">
                         <span className="text-xl">{s.icon}</span>
                         If you {o.outcome.toLowerCase()}:
                       </h2>
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium tabular-nums ${s.chip}`}>
+                      <span className={`shrink-0 text-[10px] sm:text-xs px-2 py-1 rounded-full font-medium tabular-nums ${s.chip}`}>
                         {o.totalScenarios.toLocaleString()} scenarios
                       </span>
                     </div>
@@ -439,22 +439,22 @@ function Index() {
                         <span className="font-semibold text-primary">${o.exactPayout}</span>
                       </p>
                     ) : (
-                      <div className="space-y-1 sm:space-y-1.5">
+                      <div className="space-y-1">
                         {[...o.bins].reverse().map((b, idx) => (
-                          <div key={idx} className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                            <div className="w-11 sm:w-16 text-right tabular-nums font-semibold">
+                          <div key={idx} className="grid grid-cols-[2.75rem_minmax(3rem,1fr)_4.5rem_4.75rem] sm:grid-cols-[3rem_minmax(4rem,1fr)_4.75rem_5.25rem] items-center gap-1.5 sm:gap-2 text-xs">
+                            <div className="text-right tabular-nums font-semibold">
                               {b.percent.toFixed(1)}%
                             </div>
-                            <div className="flex-1 h-2 sm:h-2.5 bg-muted rounded-full overflow-hidden">
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all ${s.bar}`}
                                 style={{ width: `${b.percent}%` }}
                               />
                             </div>
-                            <div className="w-[4.5rem] sm:w-28 text-right tabular-nums font-medium text-foreground">
+                            <div className="text-right tabular-nums font-medium text-foreground">
                               ${b.start}–${b.end}
                             </div>
-                            <div className="w-16 sm:w-24 text-right text-muted-foreground tabular-nums text-[10px] sm:text-xs opacity-70">
+                            <div className="text-right text-muted-foreground tabular-nums text-[10px] sm:text-[11px] opacity-70">
                               ({b.count.toLocaleString()}/{o.totalScenarios.toLocaleString()})
                             </div>
                           </div>
