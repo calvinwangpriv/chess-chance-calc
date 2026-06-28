@@ -1,12 +1,18 @@
 /**
- * USCF rating math (regular).
+ * USCF rating math (regular) — approximating formulas from
+ * https://www.glicko.net/ratings/approx.pdf
  *
- * Implements:
- *  - Performance rating: iterative solve for R such that
- *      sum_i 1/(1 + 10^((R_i - R)/400)) = actual score
- *  - Projected new rating using the standard USCF update with bonus.
- *    Bonus constant overridden to 10 (instead of the published 14)
- *    per project requirement.
+ * Standard formula:
+ *   Nr   = 50 / sqrt(0.662 + 0.00000739 * (2569 - Rpre)^2)   (capped: Nr = 50 if Rpre >= 2355)
+ *   Ne   = min(N, Nr)                                         (N = prior games count)
+ *   K    = 800 / (Ne + m)
+ *   We   = 1 / (10^(-(Rpre - Ropp) / 400) + 1)
+ *   E    = sum of We over opponents
+ *   B    = max(0, K*(S - E) - T*sqrt(m'))   where m' = max(m, 4)
+ *   Rpost = Rpre + K*(S - E) + B
+ *
+ * The bonus threshold T is published as 14, but this project overrides
+ * it to 10 per requirement.
  */
 
 export type RatedGame = {
@@ -28,19 +34,22 @@ export type RatingCalc = {
   kFactor: number;
 };
 
+/** Winning expectancy for a single opponent. */
+function winExpectancy(rating: number, opponent: number): number {
+  return 1 / (Math.pow(10, -(rating - opponent) / 400) + 1);
+}
+
 function expectedScoreFor(rating: number, opponents: number[]): number {
   let e = 0;
-  for (const r of opponents) {
-    e += 1 / (1 + Math.pow(10, (r - rating) / 400));
-  }
+  for (const r of opponents) e += winExpectancy(rating, r);
   return e;
 }
 
-/** Bisection solve for performance rating. Returns null when score is 0 or N (undefined). */
+/** Bisection solve for performance rating. Returns null when score is 0 or m (undefined). */
 function performanceRating(games: RatedGame[]): number | null {
   if (!games.length) return null;
   const score = games.reduce((s, g) => s + g.score, 0);
-  if (score <= 0 || score >= games.length) return null; // performance is +/- infinity
+  if (score <= 0 || score >= games.length) return null;
   const opponents = games.map((g) => g.opponentRating);
   let lo = 0;
   let hi = 3500;
@@ -54,18 +63,13 @@ function performanceRating(games: RatedGame[]): number | null {
 }
 
 /**
- * Established-player K factor approximation:
- *   K = 800 / (Ne + m), where Ne ≈ prior effective games.
- * We don't know Ne from the standings sheet alone, so we estimate from current
- * rating (higher rated players typically have many more rated games).
+ * Effective games (Nr) per the USCF approximating formulas.
+ * Without knowing prior game count N, Ne = Nr (the conservative cap).
  */
-function effectiveNFromRating(currentRating: number): number {
-  // Rough heuristic: a player rated R likely has at least this many games.
-  if (currentRating >= 2200) return 50;
-  if (currentRating >= 1800) return 40;
-  if (currentRating >= 1400) return 30;
-  if (currentRating >= 1000) return 20;
-  return 10;
+function effectiveGames(Rpre: number): number {
+  if (Rpre >= 2355) return 50;
+  const nr = 50 / Math.sqrt(0.662 + 0.00000739 * Math.pow(2569 - Rpre, 2));
+  return Math.min(50, nr);
 }
 
 export function calculateRating(
@@ -75,14 +79,17 @@ export function calculateRating(
   const m = games.length;
   const totalScore = games.reduce((s, g) => s + g.score, 0);
   const avgOpp = m ? games.reduce((s, g) => s + g.opponentRating, 0) / m : 0;
-  const expected = m ? expectedScoreFor(currentRating, games.map((g) => g.opponentRating)) : 0;
+  const opponents = games.map((g) => g.opponentRating);
+  const expected = m ? expectedScoreFor(currentRating, opponents) : 0;
 
-  const Ne = effectiveNFromRating(currentRating);
+  const Ne = effectiveGames(currentRating);
   const K = m ? 800 / (Ne + m) : 0;
   const base = K * (totalScore - expected);
-  // USCF bonus: max(0, K*(S-E) - B*sqrt(max(m,4))) with B = 10 (per project setting).
-  const B = 10;
-  const bonus = m ? Math.max(0, base - B * Math.sqrt(Math.max(m, 4))) : 0;
+
+  // Bonus: B = max(0, K(S-E) - T*sqrt(m')), m' = max(m, 4). T overridden to 10.
+  const T = 10;
+  const mPrime = Math.max(m, 4);
+  const bonus = m >= 3 ? Math.max(0, base - T * Math.sqrt(mPrime)) : 0;
   const change = base + bonus;
   const newRating = Math.round(currentRating + change);
 
