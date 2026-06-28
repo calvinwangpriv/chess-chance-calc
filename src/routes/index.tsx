@@ -401,10 +401,10 @@ function Index() {
                 </h2>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6">
 
               <div
-                className="rounded-xl border border-accent/40 p-4 flex gap-3 items-start"
+                className="rounded-xl border border-accent/40 p-3 sm:p-4 flex gap-3 items-start"
                 style={{ background: "color-mix(in oklab, var(--accent) 12%, var(--card))" }}
               >
                 <Crown className="h-5 w-5 text-accent shrink-0 mt-0.5" />
@@ -421,8 +421,8 @@ function Index() {
               {result.outcomes.map((o) => {
                 const s = outcomeStyles[o.outcome];
                 return (
-                  <div key={o.outcome} className={`rounded-xl border border-border/60 p-4 ring-1 ${s.ring} bg-card`}>
-                    <div className="flex items-center justify-between mb-3">
+                  <div key={o.outcome} className={`rounded-xl border border-border/60 p-3 sm:p-4 ring-1 ${s.ring} bg-card`}>
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
                       <h2 className="font-semibold text-base flex items-center gap-2">
                         <span className="text-xl">{s.icon}</span>
                         If you {o.outcome.toLowerCase()}:
@@ -439,22 +439,22 @@ function Index() {
                         <span className="font-semibold text-primary">${o.exactPayout}</span>
                       </p>
                     ) : (
-                      <div className="space-y-1.5">
+                      <div className="space-y-1 sm:space-y-1.5">
                         {[...o.bins].reverse().map((b, idx) => (
-                          <div key={idx} className="flex items-center gap-3 text-sm">
-                            <div className="w-16 text-right tabular-nums font-semibold">
+                          <div key={idx} className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+                            <div className="w-11 sm:w-16 text-right tabular-nums font-semibold">
                               {b.percent.toFixed(1)}%
                             </div>
-                            <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
+                            <div className="flex-1 h-2 sm:h-2.5 bg-muted rounded-full overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all ${s.bar}`}
                                 style={{ width: `${b.percent}%` }}
                               />
                             </div>
-                            <div className="w-28 text-right tabular-nums font-medium text-foreground">
+                            <div className="w-[4.5rem] sm:w-28 text-right tabular-nums font-medium text-foreground">
                               ${b.start}–${b.end}
                             </div>
-                            <div className="w-24 text-right text-muted-foreground tabular-nums text-xs opacity-70">
+                            <div className="w-16 sm:w-24 text-right text-muted-foreground tabular-nums text-[10px] sm:text-xs opacity-70">
                               ({b.count.toLocaleString()}/{o.totalScenarios.toLocaleString()})
                             </div>
                           </div>
