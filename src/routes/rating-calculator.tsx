@@ -52,6 +52,24 @@ function normName(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
 }
 
+function ratingColor(delta: number | undefined): {
+  text: string;
+  bg: string;
+  border: string;
+} {
+  if (delta == null || Number.isNaN(delta)) {
+    return { text: "inherit", bg: "transparent", border: "hsl(var(--border))" };
+  }
+  const clamped = Math.max(-100, Math.min(100, delta));
+  const hue = 60 + (clamped / 100) * 60;
+  return {
+    text: `hsl(${hue}, 70%, 45%)`,
+    bg: `linear-gradient(135deg, hsl(${hue}, 70%, 95%) 0%, hsl(${hue}, 70%, 90%) 100%)`,
+    border: `hsl(${hue}, 60%, 70%)`,
+  };
+}
+
+
 type GameRow = {
   round: number;
   opponent: string;
@@ -232,6 +250,12 @@ function RatingPage() {
     if (!ratedGames.length) return null;
     return calculateRating(ratingForCalc, ratedGames);
   }, [used, currentRatingUsed, mode, manualCurrentRating]);
+
+  const currentRating =
+    mode === "manual"
+      ? Number(manualCurrentRating) || null
+      : currentRatingUsed;
+
 
   const updateRow = (idx: number, patch: Partial<GameRow>) => {
     setUsed((prev) => prev.map((u, i) => (i === idx ? { ...u, ...patch } : u)));
@@ -450,17 +474,18 @@ function RatingPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <Stat
                   label="Current rating"
-                  value={
-                    (mode === "manual"
-                      ? Number(manualCurrentRating) || null
-                      : currentRatingUsed)?.toString() ?? "—"
-                  }
+                  value={currentRating?.toString() ?? "—"}
                 />
                 <Stat label="Avg opp rating" value={calc?.avgOpponentRating.toString() ?? "—"} />
                 <Stat
                   label="Performance"
                   value={calc?.performanceRating?.toString() ?? "—"}
                   accent
+                  delta={
+                    calc?.performanceRating != null && currentRating != null
+                      ? calc.performanceRating - currentRating
+                      : undefined
+                  }
                 />
                 <Stat
                   label="Projected new rating"
@@ -469,6 +494,11 @@ function RatingPage() {
                   sub={
                     calc
                       ? `${calc.ratingChange >= 0 ? "+" : ""}${calc.ratingChange}`
+                      : undefined
+                  }
+                  delta={
+                    calc != null && currentRating != null
+                      ? calc.newRating - currentRating
                       : undefined
                   }
                 />
@@ -611,16 +641,30 @@ function Stat({
   value,
   sub,
   accent,
+  delta,
 }: {
   label: string;
   value: string;
   sub?: string;
   accent?: boolean;
+  delta?: number;
 }) {
+  const color = ratingColor(delta);
+  const hasDelta = delta !== undefined && !Number.isNaN(delta);
   return (
-    <div className="rounded-lg border border-border/60 bg-card p-2.5">
+    <div
+      className={`rounded-lg border p-2.5 ${hasDelta ? "" : "border-border/60 bg-card"}`}
+      style={
+        hasDelta
+          ? { background: color.bg, borderColor: color.border, borderWidth: "2px" }
+          : undefined
+      }
+    >
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={`mt-0.5 text-lg sm:text-xl font-bold tabular-nums ${accent ? "text-primary" : ""}`}>
+      <div
+        className={`mt-0.5 text-lg sm:text-xl font-bold tabular-nums ${accent ? "text-primary" : ""}`}
+        style={hasDelta ? { color: color.text } : undefined}
+      >
         {value}
       </div>
       {sub && <div className="text-xs text-muted-foreground tabular-nums">{sub}</div>}
