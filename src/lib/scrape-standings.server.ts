@@ -109,12 +109,19 @@ async function fetchChessRoster(
   });
   if (!res.ok) throw new Error(`Failed to fetch ChessRoster (HTTP ${res.status})`);
   const json = (await res.json()) as {
-    eventUploadDate?: string;
+    tournamentName?: string;
     tournament?: { name?: string; title?: string };
-    swisssysReport?: { event?: { date?: string; name?: string; title?: string }; sections?: CRSection[] };
+    swisssysReport?: {
+      event?: { date?: string; endDate?: string; end_date?: string; name?: string; title?: string };
+      sections?: CRSection[];
+    };
   };
-  const rawDate = json.swisssysReport?.event?.date ?? json.eventUploadDate ?? null;
-  const eventDate = normalizeDate(rawDate);
+  // eventUploadDate is only when the report was uploaded, not when games were
+  // played. Using it as a cutoff can select a later tournament's post-rating.
+  const eventDate = normalizeDate(json.swisssysReport?.event?.date);
+  const eventEndDate = normalizeDate(
+    json.swisssysReport?.event?.endDate ?? json.swisssysReport?.event?.end_date,
+  ) ?? eventDate;
   const sections = json.swisssysReport?.sections ?? [];
   if (!sections.length) throw new Error("ChessRoster response has no sections.");
 
@@ -177,8 +184,8 @@ async function fetchChessRoster(
     offset += secPlayers.length;
   }
   const eventName =
-    json.swisssysReport?.event?.name ?? json.swisssysReport?.event?.title ?? json.tournament?.name ?? json.tournament?.title ?? null;
-  return { players: out, totalRounds, eventDate, eventEndDate: eventDate, eventName };
+    json.swisssysReport?.event?.name ?? json.swisssysReport?.event?.title ?? json.tournament?.name ?? json.tournament?.title ?? json.tournamentName ?? null;
+  return { players: out, totalRounds, eventDate, eventEndDate, eventName };
 }
 
 export async function scrapeStandingsServer(data: {
