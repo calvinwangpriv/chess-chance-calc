@@ -293,9 +293,12 @@ function RatingPage() {
 
       const myHistorical = me.uscfId ? ratingMap[me.uscfId]?.asOfRating : null;
       if (eventDate && me.uscfId && myHistorical == null) {
-        throw new Error("Could not find your published rating from before this tournament.");
+        toast.warning(
+          "No published rating found from before this tournament — using the rating shown on the standings instead.",
+        );
       }
       const currentRating = myHistorical ?? me.rating ?? 1500;
+
       setUsed(usedRows);
       setSkipped(skippedRows);
       setCurrentRatingUsed(currentRating);
