@@ -21,7 +21,7 @@ import {
 import { type StandingsPlayer } from "@/lib/extract-standings.functions";
 import { scrapeStandings } from "@/lib/scrape-standings.functions";
 import { fetchUscfRatings, type LiveRatingInfo } from "@/lib/fetch-uscf-ratings.functions";
-import { calculateRating } from "@/lib/calculate-rating";
+import { calculateRating, standardRating } from "@/lib/calculate-rating";
 
 export const Route = createFileRoute("/rating-calculator")({
   head: () => ({
@@ -196,6 +196,33 @@ function RatingPage() {
       const skippedRows: { opponent: string; reason: string }[] = [];
       const handledRounds = new Set<number>();
 
+      // Pre-event rating for any player (live rating when we have it).
+      const preRatingOf = (p: StandingsPlayer): number | null => {
+        const live = p.uscfId ? ratingMap[p.uscfId]?.liveRating : null;
+        return live ?? p.rating ?? null;
+      };
+
+      // Intermediate ratings: update each opponent's pre-event rating with
+      // their own event results before using them as an opponent rating.
+      const intermediateOf = (p: StandingsPlayer): number | null => {
+        const pre = preRatingOf(p);
+        if (pre == null) return null;
+        const oppRatings: number[] = [];
+        let sc = 0;
+        for (const g of p.games) {
+          const s = resultToScore(g.result);
+          if (s == null || g.opponentPairing == null) continue;
+          const o = byPair.get(g.opponentPairing);
+          if (!o) continue;
+          const oPre = preRatingOf(o);
+          if (oPre == null) continue;
+          oppRatings.push(oPre);
+          sc += s;
+        }
+        if (!oppRatings.length) return pre;
+        return Math.round(standardRating(pre, oppRatings, sc));
+      };
+
       for (const g of me.games) {
         const score = resultToScore(g.result);
         if (score == null) continue;
@@ -210,8 +237,7 @@ function RatingPage() {
           handledRounds.add(g.round);
           continue;
         }
-        const live = opp.uscfId ? ratingMap[opp.uscfId]?.liveRating : null;
-        const rating = live ?? opp.rating;
+        const rating = intermediateOf(opp);
         if (rating == null) {
           skippedRows.push({ opponent: opp.name, reason: "no rating available" });
           handledRounds.add(g.round);
@@ -226,6 +252,7 @@ function RatingPage() {
         });
         handledRounds.add(g.round);
       }
+
 
       // Add placeholder rows for any rounds not yet played (use this player's section round count)
       const roundsForMe = me.sectionRounds ?? totalRounds;
