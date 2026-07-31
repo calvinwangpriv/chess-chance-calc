@@ -192,11 +192,18 @@ function RatingPage() {
       // (the latter are needed for the intermediate-rating pass).
       const idSet = new Set<string>();
       if (me.uscfId) idSet.add(me.uscfId);
+      // Fetch every directly displayed opponent before the larger set of
+      // opponents-of-opponents used only by the hidden intermediate pass.
       for (const g of me.games) {
         if (g.opponentPairing == null) continue;
         const opp = byPair.get(g.opponentPairing);
         if (!opp) continue;
         if (opp.uscfId) idSet.add(opp.uscfId);
+      }
+      for (const g of me.games) {
+        if (g.opponentPairing == null) continue;
+        const opp = byPair.get(g.opponentPairing);
+        if (!opp) continue;
         for (const og of opp.games) {
           if (og.opponentPairing == null) continue;
           const oo = byPair.get(og.opponentPairing);
