@@ -345,8 +345,9 @@ function Index() {
 
 
         {pairings.length > 0 && (
-          <Card className="border-border/60 shadow-[var(--shadow-soft)] overflow-hidden">
-            <div className="h-1" style={{ background: "var(--gradient-hero)" }} />
+          <Card className="border-border/60 shadow-[var(--shadow-soft)]">
+            <div className="h-1 rounded-t-xl" style={{ background: "var(--gradient-hero)" }} />
+
             <CardHeader className="px-3 py-3 sm:px-5 sm:py-4">
               <CardTitle className="text-base">
                 <h2 className="flex items-center gap-2">
