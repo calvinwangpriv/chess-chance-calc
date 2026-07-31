@@ -96,6 +96,8 @@ type GameRow = {
   round: number;
   opponent: string;
   opponentRating: number | null;
+  /** Intermediate (in-event adjusted) rating used for math; display uses opponentRating. */
+  calcRating?: number | null;
   score: number | null;
   /** True for upcoming/unplayed rounds — opponent name + rating are user-editable. */
   pending: boolean;
@@ -254,8 +256,9 @@ function RatingPage() {
           handledRounds.add(g.round);
           continue;
         }
+        const preRating = preRatingOf(opp);
         const rating = intermediateOf(opp);
-        if (rating == null) {
+        if (rating == null || preRating == null) {
           skippedRows.push({ opponent: opp.name, reason: "no rating available" });
           handledRounds.add(g.round);
           continue;
@@ -263,7 +266,8 @@ function RatingPage() {
         usedRows.push({
           round: g.round,
           opponent: opp.name,
-          opponentRating: rating,
+          opponentRating: preRating,
+          calcRating: rating,
           score,
           pending: false,
         });
@@ -309,9 +313,10 @@ function RatingPage() {
         : currentRatingUsed;
     if (ratingForCalc == null) return null;
     const ratedGames = used
-      .filter((u) => u.score != null && u.opponentRating != null && u.opponentRating > 0)
+      .map((u) => ({ ...u, effRating: u.calcRating ?? u.opponentRating }))
+      .filter((u) => u.score != null && u.effRating != null && u.effRating > 0)
       .map((u) => ({
-        opponentRating: u.opponentRating as number,
+        opponentRating: u.effRating as number,
         score: u.score as number,
         opponentName: u.opponent,
       }));
@@ -629,6 +634,7 @@ function RatingPage() {
                                     opponentRating: e.target.value
                                       ? Number(e.target.value)
                                       : null,
+                                    calcRating: null,
                                   })
                                 }
                                 placeholder="Rating"
