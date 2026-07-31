@@ -44,9 +44,21 @@ async function fetchOne(
     let offset = 0;
     for (let page = 0; page < 6; page++) {
       const url = `https://ratings-api.uschess.org/api/v1/members/${uscfId}/sections?pageSize=100&offset=${offset}`;
-      const res = await fetch(url, {
-        headers: { Accept: "application/json", "User-Agent": "ChessToolsBot/1.0" },
-      });
+      let res: Response | undefined;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        res = await fetch(url, {
+          headers: { Accept: "application/json", "User-Agent": "ChessToolsBot/1.0" },
+        });
+        if (res.ok || (res.status !== 429 && res.status < 500)) break;
+        const retryAfter = Number(res.headers.get("retry-after"));
+        const delay = Number.isFinite(retryAfter) && retryAfter > 0
+          ? retryAfter * 1_000
+          : 350 * 2 ** attempt;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+      if (!res) {
+        return { uscfId, asOfRating: null, deltaLiveRating: null, ratingDate: null, error: "No response" };
+      }
       if (!res.ok) {
         if (page === 0) {
           return { uscfId, asOfRating: null, deltaLiveRating: null, ratingDate: null, error: `HTTP ${res.status}` };
@@ -161,7 +173,10 @@ export async function fetchUscfRatingsServer(data: {
     const unique = Array.from(new Set(data.uscfIds));
     // Light concurrency limit to be polite.
     const out: LiveRatingInfo[] = [];
-    const concurrency = 6;
+    // The ratings service throttles bursts. Keep concurrency conservative;
+    // callers put the player and displayed opponents first so those records
+    // are never displaced by hidden second-pass lookups.
+    const concurrency = 3;
     let i = 0;
     async function worker() {
       while (i < unique.length) {
