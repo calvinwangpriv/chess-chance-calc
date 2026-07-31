@@ -211,10 +211,11 @@ function RatingPage() {
       const skippedRows: { opponent: string; reason: string }[] = [];
       const handledRounds = new Set<number>();
 
-      // Pre-event rating for any player (live rating when we have it).
+      // Pre-event rating for any player. When a tournament date is known,
+      // never substitute a current/standings rating for the target player.
       const preRatingOf = (p: StandingsPlayer): number | null => {
-        const live = p.uscfId ? ratingMap[p.uscfId]?.liveRating : null;
-        return live ?? p.rating ?? null;
+        const historical = p.uscfId ? ratingMap[p.uscfId]?.asOfRating : null;
+        return historical ?? p.rating ?? null;
       };
 
       // Intermediate ratings: update each opponent's pre-event rating with
@@ -285,8 +286,11 @@ function RatingPage() {
 
       usedRows.sort((a, b) => a.round - b.round);
 
-      const myLive = me.uscfId ? ratingMap[me.uscfId]?.liveRating : null;
-      const currentRating = myLive ?? me.rating ?? 1500;
+      const myHistorical = me.uscfId ? ratingMap[me.uscfId]?.asOfRating : null;
+      if (eventDate && me.uscfId && myHistorical == null) {
+        throw new Error("Could not find your published rating from before this tournament.");
+      }
+      const currentRating = myHistorical ?? me.rating ?? 1500;
       setUsed(usedRows);
       setSkipped(skippedRows);
       setCurrentRatingUsed(currentRating);
