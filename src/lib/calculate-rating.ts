@@ -105,3 +105,26 @@ export function calculateRating(
     kFactor: K,
   };
 }
+
+/**
+ * Standard rating formula (single pass), exposed for computing opponents'
+ * "intermediate" ratings per section 1 of the USCF rating system:
+ * each opponent's pre-event rating is first updated using their own event
+ * results, and those intermediate ratings are then used as the opponent
+ * ratings when rating the target player.
+ */
+export function standardRating(
+  Rpre: number,
+  opponentRatings: number[],
+  score: number,
+): number {
+  const m = opponentRatings.length;
+  if (!m) return Rpre;
+  const Ne = effectiveGames(Rpre);
+  const K = 800 / (Ne + m);
+  const base = K * (score - expectedScoreFor(Rpre, opponentRatings));
+  if (m < 3) return Rpre + base;
+  const T = 10;
+  const bonus = Math.max(0, base - T * Math.sqrt(Math.max(m, 4)));
+  return Rpre + base + bonus;
+}
