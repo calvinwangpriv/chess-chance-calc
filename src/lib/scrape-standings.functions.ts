@@ -68,6 +68,19 @@ function findHeaderIndex(headers: string[], patterns: RegExp[]): number {
   return -1;
 }
 
+/** Normalize "2026/7/25" or ISO strings to "YYYY-MM-DD". */
+function normalizeDate(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const slash = raw.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+  if (slash) {
+    const [, y, m, d] = slash;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  const t = Date.parse(raw);
+  if (!Number.isNaN(t)) return new Date(t).toISOString().slice(0, 10);
+  return null;
+}
+
 function extractChessRosterId(url: string): string | null {
   const apiMatch = url.match(/chessroster\.com\/api\/tournaments\/([^/?#]+)/i);
   if (apiMatch) return apiMatch[1];
@@ -95,13 +108,18 @@ type CRSection = {
 
 async function fetchChessRoster(
   id: string,
-): Promise<{ players: StandingsPlayer[]; totalRounds: number }> {
+): Promise<{ players: StandingsPlayer[]; totalRounds: number; eventDate: string | null }> {
   const apiUrl = `https://www.chessroster.com/api/tournaments/${encodeURIComponent(id)}/reports`;
   const res = await fetch(apiUrl, {
     headers: { "User-Agent": "Mozilla/5.0 ChessToolsBot", Accept: "application/json" },
   });
   if (!res.ok) throw new Error(`Failed to fetch ChessRoster (HTTP ${res.status})`);
-  const json = (await res.json()) as { swisssysReport?: { sections?: CRSection[] } };
+  const json = (await res.json()) as {
+    eventUploadDate?: string;
+    swisssysReport?: { event?: { date?: string }; sections?: CRSection[] };
+  };
+  const rawDate = json.swisssysReport?.event?.date ?? json.eventUploadDate ?? null;
+  const eventDate = normalizeDate(rawDate);
   const sections = json.swisssysReport?.sections ?? [];
   if (!sections.length) throw new Error("ChessRoster response has no sections.");
 
@@ -163,12 +181,12 @@ async function fetchChessRoster(
     }
     offset += secPlayers.length;
   }
-  return { players: out, totalRounds };
+  return { players: out, totalRounds, eventDate };
 }
 
 export const scrapeStandings = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
-  .handler(async ({ data }): Promise<{ players: StandingsPlayer[]; totalRounds: number }> => {
+  .handler(async ({ data }): Promise<{ players: StandingsPlayer[]; totalRounds: number; eventDate: string | null }> => {
     const crId = extractChessRosterId(data.url);
     if (crId) return fetchChessRoster(crId);
 
@@ -215,5 +233,5 @@ export const scrapeStandings = createServerFn({ method: "POST" })
     }
 
     const totalRounds = roundIdxs.reduce((m, r) => Math.max(m, r.round), 0);
-    return { players, totalRounds };
+    return { players, totalRounds, eventDate: null };
   });
