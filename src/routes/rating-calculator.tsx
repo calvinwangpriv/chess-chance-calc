@@ -181,13 +181,22 @@ function RatingPage() {
       const byPair = new Map<number, StandingsPlayer>();
       for (const p of players) if (p.pairingNumber != null) byPair.set(p.pairingNumber, p);
 
-      const opponentIds: string[] = [];
+      // Fetch as-of ratings for me, my opponents, AND my opponents' opponents
+      // (the latter are needed for the intermediate-rating pass).
+      const idSet = new Set<string>();
+      if (me.uscfId) idSet.add(me.uscfId);
       for (const g of me.games) {
         if (g.opponentPairing == null) continue;
         const opp = byPair.get(g.opponentPairing);
-        if (opp?.uscfId) opponentIds.push(opp.uscfId);
+        if (!opp) continue;
+        if (opp.uscfId) idSet.add(opp.uscfId);
+        for (const og of opp.games) {
+          if (og.opponentPairing == null) continue;
+          const oo = byPair.get(og.opponentPairing);
+          if (oo?.uscfId) idSet.add(oo.uscfId);
+        }
       }
-      if (me.uscfId) opponentIds.push(me.uscfId);
+      const opponentIds = Array.from(idSet).slice(0, 300);
 
       let ratingMap: Record<string, LiveRatingInfo> = {};
       if (opponentIds.length) {
