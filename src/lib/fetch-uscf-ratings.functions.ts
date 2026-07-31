@@ -15,7 +15,7 @@ export type LiveRatingInfo = {
 };
 
 async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingInfo> {
-  const url = `https://ratings-api.uschess.org/api/v1/members/${uscfId}/sections`;
+  const url = `https://ratings-api.uschess.org/api/v1/members/${uscfId}/sections?pageSize=100`;
   try {
     const res = await fetch(url, {
       headers: { Accept: "application/json", "User-Agent": "ChessToolsBot/1.0" },
@@ -26,20 +26,39 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
     const data: any = await res.json();
     const all: any[] = [];
     for (const item of data?.items ?? []) {
-      const date = item?.event?.endDate ?? "";
+      const date = String(item?.event?.endDate ?? item?.endDate ?? "").slice(0, 10);
       for (const rec of item?.ratingRecords ?? []) {
         all.push({ ...rec, _date: date });
       }
     }
-    let regular = all.filter((r) => r?.ratingSource === "R");
-    if (asOfDate) {
-      // Only events that finished strictly before the tournament start date.
-      regular = regular.filter((r) => String(r._date).slice(0, 10) < asOfDate);
-    }
+    const regular = all.filter((r) => r?.ratingSource === "R" && r._date);
     if (!regular.length) {
       return { uscfId, liveRating: null, deltaLiveRating: 0 };
     }
+    // Newest first.
     regular.sort((a, b) => String(b._date).localeCompare(String(a._date)));
+
+    if (asOfDate) {
+      // If the tournament itself (or anything on/after its date) is already
+      // rated, the correct pre-event rating is that event's preRating.
+      const onOrAfter = regular.filter((r) => r._date >= asOfDate);
+      if (onOrAfter.length) {
+        const earliest = onOrAfter[onOrAfter.length - 1];
+        const pre = Number(earliest.preRating) || null;
+        if (pre != null) return { uscfId, liveRating: pre, deltaLiveRating: null };
+      }
+      // Otherwise use the postRating of the last event finished before it.
+      const before = regular.find((r) => r._date < asOfDate);
+      if (!before) return { uscfId, liveRating: null, deltaLiveRating: 0 };
+      const post = Number(before.postRating) || null;
+      const pre = Number(before.preRating) || null;
+      return {
+        uscfId,
+        liveRating: post,
+        deltaLiveRating: post != null && pre != null ? post - pre : null,
+      };
+    }
+
     const mr = regular[0];
     const post = Number(mr.postRating) || null;
     const pre = Number(mr.preRating) || null;
@@ -52,6 +71,7 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
     return { uscfId, liveRating: null, deltaLiveRating: null, error: e?.message ?? "fetch failed" };
   }
 }
+
 
 export const fetchUscfRatings = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
