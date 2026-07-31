@@ -1,10 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 import type { StandingsPlayer, StandingsGame, StandingsResult } from "./extract-standings.functions";
-
-const InputSchema = z.object({
-  url: z.string().url(),
-});
 
 function stripTags(html: string): string {
   return html
@@ -184,9 +178,9 @@ async function fetchChessRoster(
   return { players: out, totalRounds, eventDate };
 }
 
-export const scrapeStandings = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => InputSchema.parse(d))
-  .handler(async ({ data }): Promise<{ players: StandingsPlayer[]; totalRounds: number; eventDate: string | null }> => {
+export async function scrapeStandingsServer(data: {
+  url: string;
+}): Promise<{ players: StandingsPlayer[]; totalRounds: number; eventDate: string | null }> {
     const crId = extractChessRosterId(data.url);
     if (crId) return fetchChessRoster(crId);
 
@@ -233,5 +227,12 @@ export const scrapeStandings = createServerFn({ method: "POST" })
     }
 
     const totalRounds = roundIdxs.reduce((m, r) => Math.max(m, r.round), 0);
-    return { players, totalRounds, eventDate: null };
-  });
+    // ChessEvents places the tournament range near the page title. The first
+    // date is the tournament start and therefore the rating cutoff.
+    const visibleText = stripTags(html);
+    const dateRange = visibleText.match(
+      /([A-Z][a-z]+\s+\d{1,2},\s+\d{4})\s*(?:-|–|—|to)\s*[A-Z][a-z]+\s+\d{1,2},\s+\d{4}/,
+    );
+    const eventDate = normalizeDate(dateRange?.[1]);
+    return { players, totalRounds, eventDate };
+}

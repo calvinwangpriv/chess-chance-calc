@@ -1,16 +1,8 @@
-import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
-
-const InputSchema = z.object({
-  uscfIds: z.array(z.string().regex(/^\d{6,10}$/)).min(1).max(300),
-  /** Optional "YYYY-MM-DD" — use each player's rating as of just before this date. */
-  asOfDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-});
-
 export type LiveRatingInfo = {
   uscfId: string;
-  liveRating: number | null;
+  asOfRating: number | null;
   deltaLiveRating: number | null;
+  ratingDate: string | null;
   error?: string;
 };
 
@@ -21,7 +13,7 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
       headers: { Accept: "application/json", "User-Agent": "ChessToolsBot/1.0" },
     });
     if (!res.ok) {
-      return { uscfId, liveRating: null, deltaLiveRating: null, error: `HTTP ${res.status}` };
+      return { uscfId, asOfRating: null, deltaLiveRating: null, ratingDate: null, error: `HTTP ${res.status}` };
     }
     const data: any = await res.json();
     const all: any[] = [];
@@ -33,29 +25,24 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
     }
     const regular = all.filter((r) => r?.ratingSource === "R" && r._date);
     if (!regular.length) {
-      return { uscfId, liveRating: null, deltaLiveRating: 0 };
+      return { uscfId, asOfRating: null, deltaLiveRating: 0, ratingDate: null };
     }
     // Newest first.
     regular.sort((a, b) => String(b._date).localeCompare(String(a._date)));
 
     if (asOfDate) {
-      // If the tournament itself (or anything on/after its date) is already
-      // rated, the correct pre-event rating is that event's preRating.
-      const onOrAfter = regular.filter((r) => r._date >= asOfDate);
-      if (onOrAfter.length) {
-        const earliest = onOrAfter[onOrAfter.length - 1];
-        const pre = Number(earliest.preRating) || null;
-        if (pre != null) return { uscfId, liveRating: pre, deltaLiveRating: null };
-      }
-      // Otherwise use the postRating of the last event finished before it.
+      // The rating immediately before a tournament is the post-rating from
+      // the latest event that ended strictly before this tournament started.
+      // Do not use an on/after event: many history records omit preRating.
       const before = regular.find((r) => r._date < asOfDate);
-      if (!before) return { uscfId, liveRating: null, deltaLiveRating: 0 };
+      if (!before) return { uscfId, asOfRating: null, deltaLiveRating: 0, ratingDate: null };
       const post = Number(before.postRating) || null;
       const pre = Number(before.preRating) || null;
       return {
         uscfId,
-        liveRating: post,
+        asOfRating: post,
         deltaLiveRating: post != null && pre != null ? post - pre : null,
+        ratingDate: before._date,
       };
     }
 
@@ -64,18 +51,19 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
     const pre = Number(mr.preRating) || null;
     return {
       uscfId,
-      liveRating: post,
+      asOfRating: post,
       deltaLiveRating: post != null && pre != null ? post - pre : null,
+      ratingDate: mr._date,
     };
   } catch (e: any) {
-    return { uscfId, liveRating: null, deltaLiveRating: null, error: e?.message ?? "fetch failed" };
+    return { uscfId, asOfRating: null, deltaLiveRating: null, ratingDate: null, error: e?.message ?? "fetch failed" };
   }
 }
 
-
-export const fetchUscfRatings = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => InputSchema.parse(d))
-  .handler(async ({ data }): Promise<{ ratings: LiveRatingInfo[] }> => {
+export async function fetchUscfRatingsServer(data: {
+  uscfIds: string[];
+  asOfDate?: string;
+}): Promise<{ ratings: LiveRatingInfo[] }> {
     const unique = Array.from(new Set(data.uscfIds));
     // Light concurrency limit to be polite.
     const out: LiveRatingInfo[] = [];
@@ -89,4 +77,4 @@ export const fetchUscfRatings = createServerFn({ method: "POST" })
     }
     await Promise.all(Array.from({ length: Math.min(concurrency, unique.length) }, worker));
     return { ratings: out };
-  });
+}
