@@ -158,7 +158,7 @@ export async function fetchUscfRatingsServer(data: {
     async function worker() {
       while (i < unique.length) {
         const idx = i++;
-        out[idx] = await fetchOne(unique[idx], data.asOfDate, data.asOfEndDate);
+        out[idx] = await fetchOne(unique[idx], data.asOfDate, data.asOfEndDate, data.eventName);
       }
     }
     await Promise.all(Array.from({ length: Math.min(concurrency, unique.length) }, worker));
