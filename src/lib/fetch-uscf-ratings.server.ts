@@ -44,11 +44,16 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
     regular.sort((a, b) => String(b._date).localeCompare(String(a._date)));
 
     if (asOfDate) {
-      // 1) Best source: the tournament itself. Its own preRating is exactly
-      //    the rating the player carried into the event.
-      const self = regular.find(
-        (r) => r._start === asOfDate && Number(r.preRating) > 0,
-      );
+      // 1) Best source: the tournament itself (its own preRating is exactly
+      //    the rating the player carried into it). A festival like the World
+      //    Open spans weeks and a player may play several side events inside
+      //    that window, so take the LATEST-starting rated event whose start
+      //    falls inside [asOfDate, asOfEndDate].
+      const windowEnd = asOfEndDate ?? asOfDate;
+      const inWindow = regular
+        .filter((r) => r._start >= asOfDate && r._start <= windowEnd && Number(r.preRating) > 0)
+        .sort((a, b) => String(b._start).localeCompare(String(a._start)));
+      const self = inWindow[0];
       if (self) {
         return {
           uscfId,
@@ -57,6 +62,7 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
           ratingDate: self._start,
         };
       }
+
 
       // 2) Otherwise use the post-rating of the most recently *completed*
       //    event before the tournament started (not a monthly supplement).
