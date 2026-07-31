@@ -147,7 +147,9 @@ export async function fetchUscfRatingsServer(data: {
   uscfIds: string[];
   asOfDate?: string;
   asOfEndDate?: string;
+  eventName?: string;
 }): Promise<{ ratings: LiveRatingInfo[] }> {
+
     const unique = Array.from(new Set(data.uscfIds));
     // Light concurrency limit to be polite.
     const out: LiveRatingInfo[] = [];
