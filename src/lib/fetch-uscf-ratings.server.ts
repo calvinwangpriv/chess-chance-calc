@@ -6,7 +6,7 @@ export type LiveRatingInfo = {
   error?: string;
 };
 
-async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingInfo> {
+async function fetchOne(uscfId: string, asOfDate?: string, asOfEndDate?: string): Promise<LiveRatingInfo> {
   try {
     // Walk the member's full event history (paginated) so recent events are
     // never missed for very active players.
@@ -44,11 +44,16 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
     regular.sort((a, b) => String(b._date).localeCompare(String(a._date)));
 
     if (asOfDate) {
-      // 1) Best source: the tournament itself. Its own preRating is exactly
-      //    the rating the player carried into the event.
-      const self = regular.find(
-        (r) => r._start === asOfDate && Number(r.preRating) > 0,
-      );
+      // 1) Best source: the tournament itself (its own preRating is exactly
+      //    the rating the player carried into it). A festival like the World
+      //    Open spans weeks and a player may play several side events inside
+      //    that window, so take the LATEST-starting rated event whose start
+      //    falls inside [asOfDate, asOfEndDate].
+      const windowEnd = asOfEndDate ?? asOfDate;
+      const inWindow = regular
+        .filter((r) => r._start >= asOfDate && r._start <= windowEnd && Number(r.preRating) > 0)
+        .sort((a, b) => String(b._start).localeCompare(String(a._start)));
+      const self = inWindow[0];
       if (self) {
         return {
           uscfId,
@@ -57,6 +62,7 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
           ratingDate: self._start,
         };
       }
+
 
       // 2) Otherwise use the post-rating of the most recently *completed*
       //    event before the tournament started (not a monthly supplement).
@@ -103,6 +109,7 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
 export async function fetchUscfRatingsServer(data: {
   uscfIds: string[];
   asOfDate?: string;
+  asOfEndDate?: string;
 }): Promise<{ ratings: LiveRatingInfo[] }> {
     const unique = Array.from(new Set(data.uscfIds));
     // Light concurrency limit to be polite.
@@ -112,7 +119,7 @@ export async function fetchUscfRatingsServer(data: {
     async function worker() {
       while (i < unique.length) {
         const idx = i++;
-        out[idx] = await fetchOne(unique[idx], data.asOfDate);
+        out[idx] = await fetchOne(unique[idx], data.asOfDate, data.asOfEndDate);
       }
     }
     await Promise.all(Array.from({ length: Math.min(concurrency, unique.length) }, worker));

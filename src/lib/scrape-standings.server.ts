@@ -102,7 +102,7 @@ type CRSection = {
 
 async function fetchChessRoster(
   id: string,
-): Promise<{ players: StandingsPlayer[]; totalRounds: number; eventDate: string | null }> {
+): Promise<{ players: StandingsPlayer[]; totalRounds: number; eventDate: string | null; eventEndDate: string | null }> {
   const apiUrl = `https://www.chessroster.com/api/tournaments/${encodeURIComponent(id)}/reports`;
   const res = await fetch(apiUrl, {
     headers: { "User-Agent": "Mozilla/5.0 ChessToolsBot", Accept: "application/json" },
@@ -175,12 +175,12 @@ async function fetchChessRoster(
     }
     offset += secPlayers.length;
   }
-  return { players: out, totalRounds, eventDate };
+  return { players: out, totalRounds, eventDate, eventEndDate: eventDate };
 }
 
 export async function scrapeStandingsServer(data: {
   url: string;
-}): Promise<{ players: StandingsPlayer[]; totalRounds: number; eventDate: string | null }> {
+}): Promise<{ players: StandingsPlayer[]; totalRounds: number; eventDate: string | null; eventEndDate: string | null }> {
     const crId = extractChessRosterId(data.url);
     if (crId) return fetchChessRoster(crId);
 
@@ -231,8 +231,9 @@ export async function scrapeStandingsServer(data: {
     // date is the tournament start and therefore the rating cutoff.
     const visibleText = stripTags(html);
     const dateRange = visibleText.match(
-      /([A-Z][a-z]+\s+\d{1,2},\s+\d{4})\s*(?:-|–|—|to)\s*[A-Z][a-z]+\s+\d{1,2},\s+\d{4}/,
+      /([A-Z][a-z]+\s+\d{1,2},\s+\d{4})\s*(?:-|–|—|to)\s*([A-Z][a-z]+\s+\d{1,2},\s+\d{4})/,
     );
     const eventDate = normalizeDate(dateRange?.[1]);
-    return { players, totalRounds, eventDate };
+    const eventEndDate = normalizeDate(dateRange?.[2]) ?? eventDate;
+    return { players, totalRounds, eventDate, eventEndDate };
 }

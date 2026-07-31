@@ -115,6 +115,7 @@ function RatingPage() {
   const [players, setPlayers] = useState<StandingsPlayer[]>([]);
   const [totalRounds, setTotalRounds] = useState(0);
   const [eventDate, setEventDate] = useState<string | null>(null);
+  const [eventEndDate, setEventEndDate] = useState<string | null>(null);
   const [, setLiveRatings] = useState<Record<string, LiveRatingInfo>>({});
   const [busy, setBusy] = useState(false);
   const [calcBusy, setCalcBusy] = useState(false);
@@ -147,13 +148,14 @@ function RatingPage() {
     if (!url.trim()) return toast.error("Please paste a standings URL.");
     setBusy(true);
     try {
-      const { players, totalRounds, eventDate } = await scrape({ data: { url: url.trim() } });
+      const { players, totalRounds, eventDate, eventEndDate } = await scrape({ data: { url: url.trim() } });
       if (!players.length) {
         toast.error("Could not read any players from that page.");
       } else {
         setPlayers(players);
         setTotalRounds(totalRounds);
         setEventDate(eventDate);
+        setEventEndDate(eventEndDate ?? null);
         resetRows();
         setLiveRatings({});
         toast.success(
@@ -204,7 +206,11 @@ function RatingPage() {
       let ratingMap: Record<string, LiveRatingInfo> = {};
       if (opponentIds.length) {
         const { ratings } = await fetchRatings({
-          data: { uscfIds: opponentIds, ...(eventDate ? { asOfDate: eventDate } : {}) },
+          data: {
+            uscfIds: opponentIds,
+            ...(eventDate ? { asOfDate: eventDate } : {}),
+            ...(eventDate && eventEndDate ? { asOfEndDate: eventEndDate } : {}),
+          },
         });
         for (const r of ratings) ratingMap[r.uscfId] = r;
         setLiveRatings(ratingMap);
