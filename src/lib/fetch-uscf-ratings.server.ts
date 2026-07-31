@@ -33,18 +33,31 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
     if (asOfDate) {
       // The rating immediately before a tournament is the post-rating from
       // the latest event that ended strictly before this tournament started.
-      // Do not use an on/after event: many history records omit preRating.
       const before = regular.find((r) => r._date < asOfDate);
-      if (!before) return { uscfId, asOfRating: null, deltaLiveRating: 0, ratingDate: null };
-      const post = Number(before.postRating) || null;
-      const pre = Number(before.preRating) || null;
-      return {
-        uscfId,
-        asOfRating: post,
-        deltaLiveRating: post != null && pre != null ? post - pre : null,
-        ratingDate: before._date,
-      };
+      if (before) {
+        const post = Number(before.postRating) || null;
+        const pre = Number(before.preRating) || null;
+        return {
+          uscfId,
+          asOfRating: post,
+          deltaLiveRating: post != null && pre != null ? post - pre : null,
+          ratingDate: before._date,
+        };
+      }
+      // Fallback: no earlier event (e.g. this is the player's first rated
+      // event). Use the pre-rating of the earliest event on/after the date.
+      const onAfter = [...regular].reverse().find((r) => Number(r.preRating) > 0);
+      if (onAfter) {
+        return {
+          uscfId,
+          asOfRating: Number(onAfter.preRating),
+          deltaLiveRating: null,
+          ratingDate: onAfter._date,
+        };
+      }
+      return { uscfId, asOfRating: null, deltaLiveRating: 0, ratingDate: null };
     }
+
 
     const mr = regular[0];
     const post = Number(mr.postRating) || null;
