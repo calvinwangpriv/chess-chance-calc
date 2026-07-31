@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const InputSchema = z.object({
-  uscfIds: z.array(z.string().regex(/^\d{6,10}$/)).min(1).max(60),
+  uscfIds: z.array(z.string().regex(/^\d{6,10}$/)).min(1).max(300),
   /** Optional "YYYY-MM-DD" — use each player's rating as of just before this date. */
   asOfDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
