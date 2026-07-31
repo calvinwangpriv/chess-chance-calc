@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Loader2, Upload, Trophy, Calculator, Sparkles, Crown } from "lucide-react";
 import { extractPairings, type Pairing, type GameResult } from "@/lib/extract-pairings.functions";
 import { calculatePayouts, parseClassPrizes, type CalcResult } from "@/lib/calculate-payouts";
+import { PlayerSearch } from "@/components/player-search";
 
 import {
   Select,
@@ -380,12 +381,16 @@ function Index() {
               </div>
               <div>
                 <Label htmlFor="player" className="text-xs sm:text-sm">Your name</Label>
-                <Input
+                <PlayerSearch
                   id="player"
                   value={targetPlayer}
-                  onChange={(e) => setTargetPlayer(e.target.value)}
-                  className="mt-1 h-8 px-2 text-xs sm:h-9 sm:text-sm"
-                  autoComplete="off"
+                  onChange={setTargetPlayer}
+                  options={pairings.flatMap((p) => [
+                    { name: p.white.name, hint: p.white.rating != null ? String(p.white.rating) : undefined },
+                    { name: p.black.name, hint: p.black.rating != null ? String(p.black.rating) : undefined },
+                  ]).filter((o) => o.name.trim().length > 0)}
+                  placeholder="Search your name…"
+                  className="mt-1"
                 />
               </div>
               <Button
