@@ -491,8 +491,7 @@ function RatingPage() {
                 <CardContent className="space-y-3 px-3 pb-3 sm:px-5 sm:pb-5">
                   <div>
                     <Label htmlFor="player-name" className="text-xs sm:text-sm">
-                      Found {players.length} players across {totalRounds} rounds
-                      {eventDate ? ` · ${eventDate} (ratings as of just before it)` : ""}.
+                      Found {players.length} players across {totalRounds} rounds.
                     </Label>
                     <PlayerSearch
                       id="player-name"
