@@ -239,6 +239,11 @@ export async function scrapeStandingsServer(data: {
     const eventDate = normalizeDate(dateRange?.[1]);
     const eventEndDate = normalizeDate(dateRange?.[2]) ?? eventDate;
     const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) ?? html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-    const eventName = titleMatch ? stripTags(titleMatch[1]).replace(/\s*[|\-–]\s*[^|\-–]*$/, "").trim() || null : null;
+    const eventName = titleMatch
+      ? stripTags(titleMatch[1])
+          .replace(/standings[\s\S]*$/i, "")
+          .replace(/\s*[|\-–]\s*[^|\-–]*$/, "")
+          .trim() || null
+      : null;
     return { players, totalRounds, eventDate, eventEndDate, eventName };
 }

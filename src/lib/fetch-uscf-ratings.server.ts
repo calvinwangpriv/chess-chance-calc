@@ -8,10 +8,15 @@ export type LiveRatingInfo = {
 
 function nameTokens(s: string): string[] {
   return (s || "")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
     .toLowerCase()
     .replace(/[^a-z0-9 ]/g, " ")
     .split(/\s+/)
-    .filter((t) => t.length > 2 && !["the", "and", "open", "chess", "tournament", "championship", "section"].includes(t));
+    .filter((t) => t.length > 2 && !/^\d+(?:st|nd|rd|th)?$/.test(t))
+    .filter((t) => ![
+      "the", "and", "chess", "tournament", "championship", "section",
+      "standings", "annual", "results", "report", "for",
+    ].includes(t));
 }
 
 function nameScore(a: string, b: string): number {
@@ -20,7 +25,10 @@ function nameScore(a: string, b: string): number {
   if (!ta.length || !tb.size) return 0;
   let hit = 0;
   for (const t of ta) if (tb.has(t)) hit++;
-  return hit / ta.length;
+  // Dice similarity rewards an exact event-name match and prevents a side
+  // event with the same start date from winning merely because it shares one
+  // broad token (for example "World").
+  return (2 * hit) / (ta.length + tb.size);
 }
 
 async function fetchOne(
@@ -78,8 +86,8 @@ async function fetchOne(
         .sort((a, b) => String(a._start).localeCompare(String(b._start)));
 
       let self = inWindow[0];
-      if (eventName && inWindow.length > 1) {
-        let best = self;
+      if (eventName && inWindow.length) {
+        let best: (typeof inWindow)[number] | undefined;
         let bestScore = 0;
         for (const r of inWindow) {
           const s = nameScore(eventName, r._event ?? "");
@@ -88,7 +96,7 @@ async function fetchOne(
             best = r;
           }
         }
-        if (bestScore >= 0.5) self = best;
+        if (best && bestScore >= 0.6) self = best;
       }
       if (self) {
         return {
