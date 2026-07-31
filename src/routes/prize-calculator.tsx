@@ -385,10 +385,11 @@ function Index() {
                   id="player"
                   value={targetPlayer}
                   onChange={setTargetPlayer}
-                  options={pairings.flatMap((p) => [
-                    { name: p.white.name, hint: p.white.rating != null ? String(p.white.rating) : undefined },
-                    { name: p.black.name, hint: p.black.rating != null ? String(p.black.rating) : undefined },
+                  options={pairings.flatMap(([w, b]) => [
+                    { name: w[0], hint: w[2] != null ? String(w[2]) : undefined },
+                    { name: b[0], hint: b[2] != null ? String(b[2]) : undefined },
                   ]).filter((o) => o.name.trim().length > 0)}
+
                   placeholder="Search your name…"
                   className="mt-1"
                 />
