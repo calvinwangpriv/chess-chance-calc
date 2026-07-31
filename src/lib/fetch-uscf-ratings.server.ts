@@ -6,7 +6,29 @@ export type LiveRatingInfo = {
   error?: string;
 };
 
-async function fetchOne(uscfId: string, asOfDate?: string, asOfEndDate?: string): Promise<LiveRatingInfo> {
+function nameTokens(s: string): string[] {
+  return (s || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length > 2 && !["the", "and", "open", "chess", "tournament", "championship", "section"].includes(t));
+}
+
+function nameScore(a: string, b: string): number {
+  const ta = nameTokens(a);
+  const tb = new Set(nameTokens(b));
+  if (!ta.length || !tb.size) return 0;
+  let hit = 0;
+  for (const t of ta) if (tb.has(t)) hit++;
+  return hit / ta.length;
+}
+
+async function fetchOne(
+  uscfId: string,
+  asOfDate?: string,
+  asOfEndDate?: string,
+  eventName?: string,
+): Promise<LiveRatingInfo> {
   try {
     // Walk the member's full event history (paginated) so recent events are
     // never missed for very active players.
@@ -27,9 +49,10 @@ async function fetchOne(uscfId: string, asOfDate?: string, asOfEndDate?: string)
       const items: any[] = data?.items ?? [];
       for (const item of items) {
         const end = String(item?.event?.endDate ?? item?.endDate ?? "").slice(0, 10);
-        const start = String(item?.event?.startDate ?? item?.startDate ?? end).slice(0, 10);
+        const start = String(item?.startDate ?? item?.event?.startDate ?? end).slice(0, 10);
+        const evName = String(item?.event?.name ?? "");
         for (const rec of item?.ratingRecords ?? []) {
-          all.push({ ...rec, _date: end, _start: start });
+          all.push({ ...rec, _date: end, _start: start, _event: evName });
         }
       }
       if (!data?.hasNextPage || !items.length) break;
@@ -44,16 +67,29 @@ async function fetchOne(uscfId: string, asOfDate?: string, asOfEndDate?: string)
     regular.sort((a, b) => String(b._date).localeCompare(String(a._date)));
 
     if (asOfDate) {
-      // 1) Best source: the tournament itself (its own preRating is exactly
-      //    the rating the player carried into it). A festival like the World
-      //    Open spans weeks and a player may play several side events inside
-      //    that window, so take the LATEST-starting rated event whose start
-      //    falls inside [asOfDate, asOfEndDate].
+      // 1) Best source: the tournament itself — its own preRating is exactly
+      //    the rating the player carried into it. A festival window can hold
+      //    several side events, so match on the event name when we have it,
+      //    and otherwise take the earliest-starting rated event in the window
+      //    (the main event).
       const windowEnd = asOfEndDate ?? asOfDate;
       const inWindow = regular
         .filter((r) => r._start >= asOfDate && r._start <= windowEnd && Number(r.preRating) > 0)
-        .sort((a, b) => String(b._start).localeCompare(String(a._start)));
-      const self = inWindow[0];
+        .sort((a, b) => String(a._start).localeCompare(String(b._start)));
+
+      let self = inWindow[0];
+      if (eventName && inWindow.length > 1) {
+        let best = self;
+        let bestScore = 0;
+        for (const r of inWindow) {
+          const s = nameScore(eventName, r._event ?? "");
+          if (s > bestScore) {
+            bestScore = s;
+            best = r;
+          }
+        }
+        if (bestScore >= 0.5) self = best;
+      }
       if (self) {
         return {
           uscfId,
@@ -62,6 +98,7 @@ async function fetchOne(uscfId: string, asOfDate?: string, asOfEndDate?: string)
           ratingDate: self._start,
         };
       }
+
 
 
       // 2) Otherwise use the post-rating of the most recently *completed*
