@@ -467,16 +467,20 @@ function RatingPage() {
                   <div>
                     <Label htmlFor="player-name" className="text-xs sm:text-sm">
                       Found {players.length} players across {totalRounds} rounds
-                      {eventDate ? ` · event date ${eventDate} (ratings as of just before it)` : ""}.
+                      {eventDate ? ` · ${eventDate} (ratings as of just before it)` : ""}.
                     </Label>
-                    <Input
+                    <PlayerSearch
                       id="player-name"
                       value={playerName}
-                      onChange={(e) => setPlayerName(e.target.value)}
-                      placeholder="Enter your name as it appears on the sheet"
-                      className="mt-1 h-8 px-2 text-xs sm:h-9 sm:text-sm"
-                      autoComplete="off"
+                      onChange={setPlayerName}
+                      options={players.map((p) => ({
+                        name: p.name,
+                        hint: p.rating != null ? String(p.rating) : undefined,
+                      }))}
+                      placeholder="Search your name…"
+                      className="mt-1"
                     />
+
                     {playerName && (
                       <p className="mt-1 text-xs text-muted-foreground">
                         {me
