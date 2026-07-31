@@ -7,57 +7,83 @@ export type LiveRatingInfo = {
 };
 
 async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingInfo> {
-  const url = `https://ratings-api.uschess.org/api/v1/members/${uscfId}/sections?pageSize=100`;
   try {
-    const res = await fetch(url, {
-      headers: { Accept: "application/json", "User-Agent": "ChessToolsBot/1.0" },
-    });
-    if (!res.ok) {
-      return { uscfId, asOfRating: null, deltaLiveRating: null, ratingDate: null, error: `HTTP ${res.status}` };
-    }
-    const data: any = await res.json();
+    // Walk the member's full event history (paginated) so recent events are
+    // never missed for very active players.
     const all: any[] = [];
-    for (const item of data?.items ?? []) {
-      const date = String(item?.event?.endDate ?? item?.endDate ?? "").slice(0, 10);
-      for (const rec of item?.ratingRecords ?? []) {
-        all.push({ ...rec, _date: date });
+    let offset = 0;
+    for (let page = 0; page < 6; page++) {
+      const url = `https://ratings-api.uschess.org/api/v1/members/${uscfId}/sections?pageSize=100&offset=${offset}`;
+      const res = await fetch(url, {
+        headers: { Accept: "application/json", "User-Agent": "ChessToolsBot/1.0" },
+      });
+      if (!res.ok) {
+        if (page === 0) {
+          return { uscfId, asOfRating: null, deltaLiveRating: null, ratingDate: null, error: `HTTP ${res.status}` };
+        }
+        break;
       }
+      const data: any = await res.json();
+      const items: any[] = data?.items ?? [];
+      for (const item of items) {
+        const end = String(item?.event?.endDate ?? item?.endDate ?? "").slice(0, 10);
+        const start = String(item?.event?.startDate ?? item?.startDate ?? end).slice(0, 10);
+        for (const rec of item?.ratingRecords ?? []) {
+          all.push({ ...rec, _date: end, _start: start });
+        }
+      }
+      if (!data?.hasNextPage || !items.length) break;
+      offset += items.length;
     }
+
+    // Regular-rated records only, newest event first.
     const regular = all.filter((r) => r?.ratingSource === "R" && r._date);
     if (!regular.length) {
       return { uscfId, asOfRating: null, deltaLiveRating: 0, ratingDate: null };
     }
-    // Newest first.
     regular.sort((a, b) => String(b._date).localeCompare(String(a._date)));
 
     if (asOfDate) {
-      // The rating immediately before a tournament is the post-rating from
-      // the latest event that ended strictly before this tournament started.
-      const before = regular.find((r) => r._date < asOfDate);
+      // 1) Best source: the tournament itself. Its own preRating is exactly
+      //    the rating the player carried into the event.
+      const self = regular.find(
+        (r) => r._start === asOfDate && Number(r.preRating) > 0,
+      );
+      if (self) {
+        return {
+          uscfId,
+          asOfRating: Number(self.preRating),
+          deltaLiveRating: null,
+          ratingDate: self._start,
+        };
+      }
+
+      // 2) Otherwise use the post-rating of the most recently *completed*
+      //    event before the tournament started (not a monthly supplement).
+      const before = regular.find((r) => r._date < asOfDate && Number(r.postRating) > 0);
       if (before) {
-        const post = Number(before.postRating) || null;
+        const post = Number(before.postRating);
         const pre = Number(before.preRating) || null;
         return {
           uscfId,
           asOfRating: post,
-          deltaLiveRating: post != null && pre != null ? post - pre : null,
+          deltaLiveRating: pre != null ? post - pre : null,
           ratingDate: before._date,
         };
       }
-      // Fallback: no earlier event (e.g. this is the player's first rated
-      // event). Use the pre-rating of the earliest event on/after the date.
+
+      // 3) Fallback: earliest known pre-rating (first rated event).
       const onAfter = [...regular].reverse().find((r) => Number(r.preRating) > 0);
       if (onAfter) {
         return {
           uscfId,
           asOfRating: Number(onAfter.preRating),
           deltaLiveRating: null,
-          ratingDate: onAfter._date,
+          ratingDate: onAfter._start ?? onAfter._date,
         };
       }
       return { uscfId, asOfRating: null, deltaLiveRating: 0, ratingDate: null };
     }
-
 
     const mr = regular[0];
     const post = Number(mr.postRating) || null;
@@ -68,6 +94,7 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
       deltaLiveRating: post != null && pre != null ? post - pre : null,
       ratingDate: mr._date,
     };
+
   } catch (e: any) {
     return { uscfId, asOfRating: null, deltaLiveRating: null, ratingDate: null, error: e?.message ?? "fetch failed" };
   }
