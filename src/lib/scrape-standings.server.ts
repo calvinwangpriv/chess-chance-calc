@@ -102,7 +102,7 @@ type CRSection = {
 
 async function fetchChessRoster(
   id: string,
-): Promise<{ players: StandingsPlayer[]; totalRounds: number; eventDate: string | null; eventEndDate: string | null }> {
+): Promise<{ players: StandingsPlayer[]; totalRounds: number; eventDate: string | null; eventEndDate: string | null; eventName: string | null }> {
   const apiUrl = `https://www.chessroster.com/api/tournaments/${encodeURIComponent(id)}/reports`;
   const res = await fetch(apiUrl, {
     headers: { "User-Agent": "Mozilla/5.0 ChessToolsBot", Accept: "application/json" },
@@ -110,7 +110,8 @@ async function fetchChessRoster(
   if (!res.ok) throw new Error(`Failed to fetch ChessRoster (HTTP ${res.status})`);
   const json = (await res.json()) as {
     eventUploadDate?: string;
-    swisssysReport?: { event?: { date?: string }; sections?: CRSection[] };
+    tournament?: { name?: string; title?: string };
+    swisssysReport?: { event?: { date?: string; name?: string; title?: string }; sections?: CRSection[] };
   };
   const rawDate = json.swisssysReport?.event?.date ?? json.eventUploadDate ?? null;
   const eventDate = normalizeDate(rawDate);
@@ -175,12 +176,14 @@ async function fetchChessRoster(
     }
     offset += secPlayers.length;
   }
-  return { players: out, totalRounds, eventDate, eventEndDate: eventDate };
+  const eventName =
+    json.swisssysReport?.event?.name ?? json.swisssysReport?.event?.title ?? json.tournament?.name ?? json.tournament?.title ?? null;
+  return { players: out, totalRounds, eventDate, eventEndDate: eventDate, eventName };
 }
 
 export async function scrapeStandingsServer(data: {
   url: string;
-}): Promise<{ players: StandingsPlayer[]; totalRounds: number; eventDate: string | null; eventEndDate: string | null }> {
+}): Promise<{ players: StandingsPlayer[]; totalRounds: number; eventDate: string | null; eventEndDate: string | null; eventName: string | null }> {
     const crId = extractChessRosterId(data.url);
     if (crId) return fetchChessRoster(crId);
 
@@ -235,5 +238,7 @@ export async function scrapeStandingsServer(data: {
     );
     const eventDate = normalizeDate(dateRange?.[1]);
     const eventEndDate = normalizeDate(dateRange?.[2]) ?? eventDate;
-    return { players, totalRounds, eventDate, eventEndDate };
+    const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) ?? html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+    const eventName = titleMatch ? stripTags(titleMatch[1]).replace(/\s*[|\-–]\s*[^|\-–]*$/, "").trim() || null : null;
+    return { players, totalRounds, eventDate, eventEndDate, eventName };
 }
