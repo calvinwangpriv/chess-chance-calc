@@ -31,6 +31,16 @@ function nameScore(a: string, b: string): number {
   return (2 * hit) / (ta.length + tb.size);
 }
 
+function shiftIsoDate(date: string, days: number): string {
+  const value = new Date(`${date}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+
+function dateDistance(a: string, b: string): number {
+  return Math.abs(Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / 86_400_000;
+}
+
 async function fetchOne(
   uscfId: string,
   asOfDate?: string,
@@ -92,10 +102,14 @@ async function fetchOne(
       //    several side events, so match on the event name when we have it,
       //    and otherwise take the earliest-starting rated event in the window
       //    (the main event).
-      const windowEnd = asOfEndDate ?? asOfDate;
+      const windowStart = shiftIsoDate(asOfDate, -1);
+      const windowEnd = shiftIsoDate(asOfEndDate ?? asOfDate, 1);
       const inWindow = regular
-        .filter((r) => r._start >= asOfDate && r._start <= windowEnd && Number(r.preRating) > 0)
-        .sort((a, b) => String(a._start).localeCompare(String(b._start)));
+        .filter((r) => r._start >= windowStart && r._start <= windowEnd && Number(r.preRating) > 0)
+        .sort((a, b) => {
+          const distance = dateDistance(String(a._start), asOfDate) - dateDistance(String(b._start), asOfDate);
+          return distance || String(a._start).localeCompare(String(b._start));
+        });
 
       let self = inWindow[0];
       if (eventName && inWindow.length) {
@@ -108,7 +122,10 @@ async function fetchOne(
             best = r;
           }
         }
-        if (best && bestScore >= 0.6) self = best;
+        // Event feeds often abbreviate names differently. A meaningful shared
+        // name plus the date window is safer than silently choosing a sibling
+        // event merely because it starts on the same day.
+        if (best && bestScore >= 0.4) self = best;
       }
       if (self) {
         return {
