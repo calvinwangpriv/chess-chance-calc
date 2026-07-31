@@ -6,7 +6,7 @@ export type LiveRatingInfo = {
   error?: string;
 };
 
-async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingInfo> {
+async function fetchOne(uscfId: string, asOfDate?: string, asOfEndDate?: string): Promise<LiveRatingInfo> {
   try {
     // Walk the member's full event history (paginated) so recent events are
     // never missed for very active players.
@@ -109,6 +109,7 @@ async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingIn
 export async function fetchUscfRatingsServer(data: {
   uscfIds: string[];
   asOfDate?: string;
+  asOfEndDate?: string;
 }): Promise<{ ratings: LiveRatingInfo[] }> {
     const unique = Array.from(new Set(data.uscfIds));
     // Light concurrency limit to be polite.
@@ -118,7 +119,7 @@ export async function fetchUscfRatingsServer(data: {
     async function worker() {
       while (i < unique.length) {
         const idx = i++;
-        out[idx] = await fetchOne(unique[idx], data.asOfDate);
+        out[idx] = await fetchOne(unique[idx], data.asOfDate, data.asOfEndDate);
       }
     }
     await Promise.all(Array.from({ length: Math.min(concurrency, unique.length) }, worker));
