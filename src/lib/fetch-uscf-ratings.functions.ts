@@ -3,6 +3,8 @@ import { z } from "zod";
 
 const InputSchema = z.object({
   uscfIds: z.array(z.string().regex(/^\d{6,10}$/)).min(1).max(60),
+  /** Optional "YYYY-MM-DD" — use each player's rating as of just before this date. */
+  asOfDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 export type LiveRatingInfo = {
@@ -12,7 +14,7 @@ export type LiveRatingInfo = {
   error?: string;
 };
 
-async function fetchOne(uscfId: string): Promise<LiveRatingInfo> {
+async function fetchOne(uscfId: string, asOfDate?: string): Promise<LiveRatingInfo> {
   const url = `https://ratings-api.uschess.org/api/v1/members/${uscfId}/sections`;
   try {
     const res = await fetch(url, {
@@ -29,7 +31,11 @@ async function fetchOne(uscfId: string): Promise<LiveRatingInfo> {
         all.push({ ...rec, _date: date });
       }
     }
-    const regular = all.filter((r) => r?.ratingSource === "R");
+    let regular = all.filter((r) => r?.ratingSource === "R");
+    if (asOfDate) {
+      // Only events that finished strictly before the tournament start date.
+      regular = regular.filter((r) => String(r._date).slice(0, 10) < asOfDate);
+    }
     if (!regular.length) {
       return { uscfId, liveRating: null, deltaLiveRating: 0 };
     }
@@ -58,7 +64,7 @@ export const fetchUscfRatings = createServerFn({ method: "POST" })
     async function worker() {
       while (i < unique.length) {
         const idx = i++;
-        out[idx] = await fetchOne(unique[idx]);
+        out[idx] = await fetchOne(unique[idx], data.asOfDate);
       }
     }
     await Promise.all(Array.from({ length: Math.min(concurrency, unique.length) }, worker));
